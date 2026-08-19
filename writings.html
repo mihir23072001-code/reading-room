@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Writings — Mihir Panchal</title>
+<meta name="description" content="An archive of essays and notebook entries on philosophy, religion and research, by Mihir Panchal."/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/renaissance-assets/renaissance.css"/>
+</head>
+<body>
+<div class="grain"></div>
+
+<nav class="nav scrolled">
+  <a href="/index.html" class="nav-name">The Reading Room</a>
+  <div class="nav-links">
+    <a href="/writings.html" class="active">Writings</a>
+    <a href="/thoughts.html">Thoughts</a>
+    <a href="/about.html">About</a>
+  </div>
+  <button class="nav-menu-btn" aria-label="Open menu"><span class="bars"><span></span><span></span><span></span></span>Menu</button>
+</nav>
+
+<div class="menu-overlay">
+  <button class="menu-close" aria-label="Close menu">Close ×</button>
+  <div class="menu-art"><img src="/renaissance-assets/img/garden-bust.jpg" alt="Marble bust from the garden painting, used as a decorative detail."/></div>
+  <div class="menu-links">
+    <a href="/writings.html"><span class="mn">01</span>Writings</a>
+    <a href="/thoughts.html"><span class="mn">02</span>Thoughts</a>
+    <a href="/about.html"><span class="mn">03</span>About</a>
+  </div>
+  <div class="menu-foot">Notes from a reading desk — Mihir Panchal</div>
+</div>
+
+<section class="page-hero">
+  <div class="wrap">
+    <p class="eyebrow">WRITINGS</p>
+    <h1>Ideas worth arguing with.</h1>
+    <p class="sub">Every essay and notebook entry that has earned a place, filed by subject.</p>
+    <div class="filters" id="filters">
+      <button class="filter-btn active" data-filter="ALL">All</button>
+      <button class="filter-btn" data-filter="PHILOSOPHY">Philosophy</button>
+      <button class="filter-btn" data-filter="HISTORY">History</button>
+      <button class="filter-btn" data-filter="RELIGION">Religion</button>
+      <button class="filter-btn" data-filter="POLITICS">Politics</button>
+      <button class="filter-btn" data-filter="RESEARCH">Research</button>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="padding-top:20px;">
+  <div class="wrap">
+    <div class="archive-list" id="archiveList"></div>
+    <p id="emptyNote" style="display:none; font-family:var(--serif); font-style:italic; color:var(--muted); padding:30px 0;">Nothing published here yet — check back soon.</p>
+  </div>
+</section>
+
+<footer class="site">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="nav-name" style="font-size:16px;">Mihir Panchal</div>
+      <div class="foot-links">
+        <a href="/writings.html">Writings</a>
+        <a href="/thoughts.html">Thoughts</a>
+        <a href="/about.html">About</a>
+        <a href="mailto:panchalmihir2911@gmail.com">Email</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© Mihir Panchal</span>
+      <span>A reading room, not a resume.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="/renaissance-assets/vendor/gsap.min.js"></script>
+<script src="/renaissance-assets/vendor/ScrollTrigger.min.js"></script>
+<script src="/renaissance-assets/vendor/lenis.min.js"></script>
+<script>
+  function esc(s){ const d=document.createElement('div'); d.textContent = s==null?'':String(s); return d.innerHTML; }
+  fetch('/renaissance-assets/generated/writings.json').then(r=>r.ok?r.json():[]).catch(()=>[]).then(essays => {
+    const archiveList = document.getElementById('archiveList');
+    if (!essays.length) { document.getElementById('emptyNote').style.display = 'block'; return; }
+    essays.forEach((e, i) => {
+      const a = document.createElement('a');
+      a.className = 'archive-row reveal';
+      a.href = '/writings/' + e.slug + '.html';
+      a.dataset.cursor = 'read';
+      a.dataset.category = e.category;
+      a.innerHTML = `
+        <span class="an">${String(i+1).padStart(2,'0')}</span>
+        <span class="at">${esc(e.title)}</span>
+        <span class="acat">${esc(e.category || '')}</span>
+        <span class="amin">${e.readingTime || 2} min</span>
+      `;
+      archiveList.appendChild(a);
+    });
+    archiveList.querySelectorAll('.reveal').forEach(el=>el.classList.add('in-view'));
+
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        filterBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const f = btn.dataset.filter;
+        document.querySelectorAll('.archive-row').forEach(row => {
+          row.classList.toggle('hide', f !== 'ALL' && row.dataset.category !== f);
+        });
+      });
+    });
+  });
+</script>
+<script src="/renaissance-assets/main.js"></script>
+</body>
+</html>
