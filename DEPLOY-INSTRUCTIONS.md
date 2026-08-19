@@ -69,11 +69,16 @@ directly on GitHub's website, which also works and triggers a redeploy).
 Once logged into `/admin`, you'll see three sections: **Writings** (long-form essays),
 **Thoughts**, and **Books**.
 
-Thoughts is deliberately down to three fields — publishing one takes seconds:
+Thoughts is deliberately kept to four fields — publishing one takes seconds:
 
 1. **Title** — the thought, question or observation itself.
-2. **Explanation** — the longer line underneath it.
+2. **Description** — the longer line underneath it.
 3. **Image** — upload one; you'll see a preview before you publish.
+4. **Date** — optional. Controls where the entry sits in the Journal (newest first). Leave it
+   blank and it defaults to whenever you first publish the entry.
+
+You can come back to any Thought later and edit its title, description, image or date, or
+delete it outright — nothing is locked in after publishing.
 
 Books is even smaller — two fields, nothing else:
 
@@ -82,21 +87,21 @@ Books is even smaller — two fields, nothing else:
 
 Click **Publish** (or **Save** then **Publish**, depending on the button shown) and it
 triggers a new build automatically — usually live within 1–2 minutes. A new Thought appears
-as the next tile in the homepage's horizontal Thoughts sequence and in the `/thoughts.html`
-archive; a new Book joins the animated corridor beneath the Reading Desk. Neither needs any
-other step — nothing to reorder, no frontend file to touch.
+as the next entry in the homepage's vertical Journal and in the `/thoughts.html` archive;
+a new Book joins the marquee in the Shelf section. Neither needs any other step — nothing
+to reorder, no frontend file to touch.
 
 - **Published** toggle (Thoughts and Writings only — Books has no toggle, by design):
   flip it off and publish again to pull an entry down without deleting it. **Delete** removes
   an entry outright, in any of the three sections.
-- Thoughts and Books both sort newest-first automatically, and there's no ordering field to
-  think about — "newest" is read from git's own commit history for that file (Netlify's build
-  sees the full history once this is pushed to GitHub), so the moment you publish is what
-  decides the order. Nothing to fill in by hand, nothing that can go stale.
-- The book corridor shows a fixed number of covers on screen at once for performance (9 per
-  rail on desktop, fewer on tablet/mobile) — with more books published than that, each slot
-  rotates through the *whole* list over time rather than being capped at the first handful, so
-  every published book eventually surfaces no matter how many you add.
+- Thoughts sort newest-first by the Date field above; Books sort newest-first automatically
+  with no ordering field to think about — "newest" is read from git's own commit history for
+  that file (Netlify's build sees the full history once this is pushed to GitHub), so the
+  moment you publish a Book is what decides its order.
+- The Shelf splits every published book across two rows that scroll past in opposite
+  directions — a plain, lightweight CSS marquee rather than an animated 3D corridor, so it
+  runs just as smoothly on a phone as on a desktop. Every published book is on screen in the
+  loop; there's no cap and nothing to trim as you add more.
 - Writings keeps its own fields (Category, Excerpt, Date, Body, Featured) exactly as before —
   none of today's changes touched Writings. Note the **Featured** checkbox on Writings is
   currently unused by the homepage (the Featured Writings teaser section was removed from the
@@ -111,18 +116,19 @@ That's the whole loop: write in `/admin`, hit Publish, it's live.
 
 ## What's already seeded
 
-- The six essays/notes from the original brief are split as before: the three longer,
-  argumentative pieces are in **Writings**. The three shorter, more observational ones and
-  three short fragments are seeded into **Thoughts** — condensed down to a title and a short
-  explanation each, matching the new three-field shape. Two of the short fragments (the
-  question about incompatible faiths, and the observation about history) were left with no
-  explanation, since the original brief gave them as complete one-line thoughts — their tiles
-  show title and image only, which is an intentional variation, not a gap. Add an explanation
-  to either any time you like.
-- Each seeded Thought was given one of the site's existing paintings, cropped toward whichever
-  detail fit it best — no new artwork was generated for this pass. Two new paintings you sent
-  along with these instructions (the crossroads scene, and the library doorway at sunset) are
-  now in `renaissance-assets/img/` too and are already in use on two of the tiles.
+- All six entries from your journal are seeded into **Thoughts** — the exact title and the
+  full, verbatim text of each, nothing condensed or reworded. Three of these (Exploring
+  Monotheism, Is "I" Creation?, Gold ⇄ Milk) also have their own dedicated pages in
+  **Writings**, since they were originally written as longer essays; they now live in both
+  places by design, so the Journal on the homepage is the one spot with all six, and the three
+  bigger ones additionally get a standalone page under Writings.
+- Each seeded Thought uses the actual illustration from your journal — pulled straight out of
+  the source PDF and matched to its entry — rather than a site painting standing in for it.
+  They live in `renaissance-assets/img/journal-covers/`; swap any of them from Admin → Thoughts
+  → Image whenever you like.
+- The Gold ⇄ Milk entry under Thoughts keeps its headings and comparison table — the
+  description field supports the same light markdown as Writings (`## Heading` and pipe
+  tables), so longer entries don't have to be flattened to plain paragraphs.
 - **Books** is seeded with 19 titles from your own reading list, with real cover art — mostly
   hotlinked from Open Library's public covers API (a free, purpose-built service; no image
   files to manage for those), plus two you sent directly (Kasap, Deewar Mein Ek Khidki Rehti
@@ -132,10 +138,10 @@ That's the whole loop: write in `/admin`, hit Publish, it's live.
 
 ## A few honest notes
 
-- The homepage's Thoughts section is driven by one JSON file (`thoughts.json`) that `/admin`
-  writes to — nothing on the public site is hand-typed, so a new entry appears without
-  touching any code. The horizontal scroll distance is computed from the real rendered width
-  of whatever's published, so it adapts on its own as you add or remove entries.
+- The homepage's Journal is driven by one JSON file (`thoughts.json`) that `/admin` writes
+  to — nothing on the public site is hand-typed, so a new entry appears without touching any
+  code. It's a plain vertical list (no pinned or horizontal-scrolling sections anywhere on the
+  site anymore), so it reads the same way on a phone as it does on a desktop.
 - If you ever want to skip Netlify's build step entirely and just check your changes locally,
   run `node build.js` from inside the project folder (no install needed — it only uses
   Node's built-in tools) and open `index.html` with a local server (e.g. `python3 -m http.server`,

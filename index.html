@@ -8,18 +8,22 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="/renaissance-assets/renaissance.css"/>
-     <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
-   <script>
-     if (window.netlifyIdentity) {
-       window.netlifyIdentity.on("init", user => {
-         if (!user) {
-           window.netlifyIdentity.on("login", () => {
-             document.location.href = "/admin/";
-           });
-         }
-       });
-     }
-   </script>
+<!-- Netlify Identity invite/recovery links land on whatever page the email
+     pointed at (often the homepage, not /admin/ directly) — this catches
+     that link here too and sends a logged-in user on to /admin/. Without
+     this, an invite email opened from the homepage does nothing visible. -->
+<script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+<script>
+  if (window.netlifyIdentity) {
+    window.netlifyIdentity.on("init", user => {
+      if (!user) {
+        window.netlifyIdentity.on("login", () => {
+          document.location.href = "/admin/";
+        });
+      }
+    });
+  }
+</script>
 </head>
 <body>
 <div class="grain"></div>
@@ -60,99 +64,26 @@
       </h1>
       <p class="hero-sub">Notes from a reading desk: what I explore, question, and keep.</p>
     </div>
-    <div class="hero-cue"><span class="line">Begin with a question.</span><span class="stick"></span><span>Scroll</span></div>
+    <div class="hero-cue" id="heroCue"><span>Begin with a question</span><span class="stick"></span></div>
   </section>
 
-  <section class="explore" id="explore">
-    <div class="explore-pin">
-      <div class="explore-stage">
-        <div class="explore-art"><img src="/renaissance-assets/img/garden.jpg" alt="A vertical Renaissance-style garden painting: philosophers and students gather around a marble rotunda, statues, an armillary sphere and globes overlooking a river valley."/></div>
-        <div class="explore-copy">
-          <div class="explore-head reveal">
-            <p class="eyebrow"><span class="num">02</span>EXPLORE</p>
-            <h2>Six rooms in the same garden.</h2>
-          </div>
-          <div class="chapter-list">
-            <div class="chapter"><p class="cn">01</p><h3>Philosophy</h3><p>Questions about reality, knowledge, reason and existence.</p></div>
-            <div class="chapter"><p class="cn">02</p><h3>History</h3><p>Not simply what happened, but why.</p></div>
-            <div class="chapter"><p class="cn">03</p><h3>Religion</h3><p>Belief, tradition and different attempts to understand existence.</p></div>
-            <div class="chapter"><p class="cn">04</p><h3>Politics</h3><p>Power, institutions and the ideas societies organize themselves around.</p></div>
-            <div class="chapter"><p class="cn">05</p><h3>Research</h3><p>Patterns and questions that don't sit neatly inside one subject.</p></div>
-            <div class="chapter"><p class="cn">06</p><h3>Thoughts</h3><p>Fragments, questions and notes — not yet arguments.</p></div>
-          </div>
-          <div class="explore-dots">
-            <span></span><span></span><span></span><span></span><span></span><span></span>
-          </div>
-        </div>
-      </div>
+  <section class="journal-sec" id="thoughts">
+    <div class="wrap journal-head reveal">
+      <p class="eyebrow"><span class="num">02</span>THE JOURNAL</p>
+      <h2>Entries, kept roughly in the order I had them.</h2>
+      <p class="journal-sub">Fragments, questions and half-formed ideas — not yet arguments. Each one opens to the fuller note.</p>
     </div>
+    <div id="journalList"></div>
   </section>
 
-  <section class="transition-statement">
-    <div class="wrap">
-      <p class="statement reveal">I read because certainty is suspicious.</p>
+  <section class="marquee-sec" id="books">
+    <div class="wrap marquee-head reveal">
+      <p class="eyebrow"><span class="num">03</span>THE SHELF</p>
+      <h2>Every book that shaped a thought.</h2>
     </div>
-  </section>
-
-  <section class="stream-sec" id="thoughts">
-    <div class="stream-pin">
-      <div class="stream-stage" id="streamStage">
-        <div class="stream-edge-l"></div>
-        <div class="stream-track" id="streamTrack"></div>
-        <div class="stream-edge-r"></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="transition-statement">
-    <div class="wrap">
-      <p class="statement tight reveal">An answer is useful. A better question is dangerous.</p>
-    </div>
-  </section>
-
-  <section class="reader" id="reading-desk">
-    <div class="reader-pin">
-      <div class="reader-stage">
-        <div class="reader-art"><img src="/renaissance-assets/img/reader.jpg" alt="A vertical Renaissance-style painting of a lone scholar reading by candlelight inside an immense, cathedral-scale library."/></div>
-        <div class="reader-scrim"></div>
-        <div class="reader-copy">
-          <div class="head-block">
-            <p class="eyebrow"><span class="num">04</span>READING DESK</p>
-            <h2>The larger the library, the smaller the reader.</h2>
-          </div>
-          <p class="lede">Books rarely give me conclusions. They give me better questions.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="book-corridor-sec" id="books">
-    <svg class="book-corridor-thread" viewBox="0 0 500 900" preserveAspectRatio="none" aria-hidden="true">
-      <path d="M70,-10 C210,70 -10,190 130,260 C270,330 30,410 170,480 C310,550 50,620 190,700 C320,770 90,830 220,910"/>
-    </svg>
-    <div class="book-corridor-scrim"></div>
-    <div class="book-corridor-stage" id="bookCorridor"></div>
-    <div class="book-corridor-copy">
-      <div class="book-corridor-copy-inner">
-        <p class="eyebrow"><span class="num">05</span>THE ARCHIVE</p>
-        <h2>Every book that shaped a thought.</h2>
-      </div>
-    </div>
-  </section>
-
-  <section class="transition-statement">
-    <div class="wrap">
-      <p class="statement tight reveal">Not everything needs to become an essay.</p>
-    </div>
-  </section>
-
-  <section class="section" id="more-writings">
-    <div class="wrap">
-      <div class="section-head reveal">
-        <p class="eyebrow"><span class="num">06</span>WRITING ARCHIVE</p>
-        <h2>Everything else I've written lives in one place.</h2>
-      </div>
-      <div class="list-foot reveal"><a href="/writings.html" style="font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:var(--burgundy);">Browse the full archive →</a></div>
+    <div class="marquee-viewport">
+      <div class="marquee-row marquee-row-a"><div class="marquee-track" id="marqueeTrackA"></div></div>
+      <div class="marquee-row marquee-row-b"><div class="marquee-track" id="marqueeTrackB"></div></div>
     </div>
   </section>
 
@@ -162,7 +93,7 @@
         <img src="/renaissance-assets/img/hero-hands.jpg" alt="A detail crop of two reaching hands from the hero painting, used here as a symbolic image rather than a portrait."/>
       </div>
       <div class="about-copy reveal">
-        <p class="eyebrow"><span class="num">07</span>WHY THIS EXISTS</p>
+        <p class="eyebrow"><span class="num">04</span>WHY THIS EXISTS</p>
         <p class="statement">I read because I enjoy the moment an assumption becomes a question.</p>
         <p>This website is a record of that process — notes from books, history, philosophy, religion, politics and whatever else makes me stop and reconsider what I thought I understood.</p>
         <p>Not a collection of final answers. A record of changing questions.</p>
@@ -172,14 +103,6 @@
   </section>
 
 </main>
-
-<section class="ending">
-  <div class="ending-art"><img src="/renaissance-assets/img/hero-birth-of-question.jpg" alt="The hero painting again, darkened, closing the page as it opened."/></div>
-  <div class="ending-inner">
-    <p class="statement">THINK. ASSUME.<br/>SEARCH. REPEAT.</p>
-    <p class="line2">There is always another question.</p>
-  </div>
-</section>
 
 <footer class="site">
   <div class="wrap">
@@ -199,9 +122,6 @@
   </div>
 </footer>
 
-<script src="/renaissance-assets/vendor/gsap.min.js"></script>
-<script src="/renaissance-assets/vendor/ScrollTrigger.min.js"></script>
-<script src="/renaissance-assets/vendor/lenis.min.js"></script>
 <script src="/renaissance-assets/main.js"></script>
 <script>
 (function(){
@@ -209,9 +129,8 @@
     fetch('/renaissance-assets/generated/thoughts.json').then(r=>r.ok?r.json():[]).catch(()=>[]),
     fetch('/renaissance-assets/generated/books.json').then(r=>r.ok?r.json():[]).catch(()=>[]),
   ]).then(([thoughts, books]) => {
-    if (window.renderThoughts) window.renderThoughts(thoughts || []);
-    if (window.renderBookCorridor) window.renderBookCorridor(books || []);
-    if (window.ScrollTrigger) window.ScrollTrigger.refresh();
+    if (window.renderJournal) window.renderJournal(thoughts || []);
+    if (window.renderBookMarquee) window.renderBookMarquee(books || []);
   });
 })();
 </script>

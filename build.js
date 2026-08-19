@@ -33,13 +33,14 @@ function readCollection(name) {
     .filter(Boolean);
 }
 
-/* Thoughts have no date field for the writer to fill in (point 14 of the
-   brief: no manual date entry, ever). Instead we ask git — the same git
-   Decap CMS commits to on every publish — for this file's first and most
-   recent commit timestamps. On Netlify that's a full, real history, so
-   this is exact. Locally, before a repo exists, there's no history to ask,
-   so we fall back to the file's own mtime, which is the best available
-   proxy and still requires nothing from the writer. */
+/* Fallback dating for entries with no (or no usable) manual date field —
+   currently Books always, and Thoughts saved before the Date field existed
+   or left blank. We ask git — the same git Decap CMS commits to on every
+   publish — for this file's first and most recent commit timestamps. On
+   Netlify that's a full, real history, so this is exact. Locally, before a
+   repo exists, there's no history to ask, so we fall back to the file's
+   own mtime, which is the best available proxy and still requires nothing
+   from the writer. */
 function fileTimestamps(absPath) {
   try {
     const out = execFileSync('git', ['log', '--follow', '--format=%aI', '--', absPath], {
@@ -142,6 +143,28 @@ function renderBody(md, quote) {
   return parts.join('\n');
 }
 
+/* Same minimal markdown support as renderBody() above (paragraphs, "## "
+   headings, pipe tables) but without the dropcap/pull-quote treatment —
+   those are article-page conventions, not Journal-modal ones. Used for
+   Thoughts' description field so a longer entry (headings, a data table)
+   reads exactly as written instead of being flattened to plain text. */
+function renderThoughtBody(md) {
+  const blocks = parseMarkdown(md);
+  const parts = [];
+  blocks.forEach(b => {
+    if (b.h) {
+      parts.push(`<h4>${esc(b.h)}</h4>`);
+    } else if (b.p) {
+      parts.push(`<p>${esc(b.p)}</p>`);
+    } else if (b.table) {
+      const thead = (b.table.head || []).map(h => `<th>${esc(h)}</th>`).join('');
+      const rows = (b.table.rows || []).map(row => `<tr>${row.map(c => `<td>${esc(c)}</td>`).join('')}</tr>`).join('');
+      parts.push(`<div class="article-table-wrap"><table class="jtable"><thead><tr>${thead}</tr></thead><tbody>${rows}</tbody></table></div>`);
+    }
+  });
+  return parts.join('\n');
+}
+
 function pageShell({ title, description, heroImg, heroAlt, eyebrow, heading, desc, meta, body, backHref, backLabel }) {
   return `<!doctype html>
 <html lang="en">
@@ -218,9 +241,6 @@ function pageShell({ title, description, heroImg, heroAlt, eyebrow, heading, des
   </div>
 </footer>
 
-<script src="/renaissance-assets/vendor/gsap.min.js"></script>
-<script src="/renaissance-assets/vendor/ScrollTrigger.min.js"></script>
-<script src="/renaissance-assets/vendor/lenis.min.js"></script>
 <script src="/renaissance-assets/main.js"></script>
 </body>
 </html>
@@ -270,11 +290,14 @@ function buildWritings() {
   console.log(`writings: ${entries.length} published, pages written to /writings/`);
 }
 
-/* Thoughts: title, explanation, image — nothing else. One /admin
-   collection, three fields, published straight into the homepage's
-   horizontal Thought archive with no separate page per entry and no
-   frontend edits ever required. New entries just appear as the next tile
-   because the index this writes is what the tile renderer reads from. */
+/* Thoughts: title, description, image, date — published straight into the
+   homepage's vertical Journal with no separate page per entry and no
+   frontend edits ever required. New entries just appear as the next band
+   because the index this writes is what the Journal renderer reads from.
+   Date is a manual field in /admin (so the writer controls where an entry
+   sits, not just publish order) — if it's left blank we fall back to git/
+   mtime, same as before, so older entries saved before this field existed
+   keep working unchanged. */
 function buildThoughts() {
   const dir = path.join(CONTENT, 'thoughts');
   const files = readCollectionFiles('thoughts');
@@ -282,7 +305,15 @@ function buildThoughts() {
     try {
       const entry = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
       const ts = fileTimestamps(path.join(dir, f));
-      return Object.assign(entry, ts);
+      let manualDate = null;
+      if (entry.date) {
+        const d = new Date(entry.date);
+        if (!isNaN(d.getTime())) manualDate = d.toISOString();
+      }
+      return Object.assign(entry, {
+        createdAt: manualDate || ts.createdAt,
+        updatedAt: manualDate || ts.updatedAt,
+      });
     } catch (e) {
       console.warn('Skipping invalid JSON: thoughts', f, e.message);
       return null;
@@ -293,6 +324,7 @@ function buildThoughts() {
 
   const index = entries.map(t => ({
     id: t.id || t.title, title: t.title || '', explanation: t.explanation || '',
+    explanationHtml: renderThoughtBody(t.explanation),
     image: t.image || '', createdAt: t.createdAt, updatedAt: t.updatedAt,
   }));
   fs.writeFileSync(path.join(GEN, 'thoughts.json'), JSON.stringify(index, null, 2), 'utf8');

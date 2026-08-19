@@ -74,9 +74,6 @@
   </div>
 </footer>
 
-<script src="/renaissance-assets/vendor/gsap.min.js"></script>
-<script src="/renaissance-assets/vendor/ScrollTrigger.min.js"></script>
-<script src="/renaissance-assets/vendor/lenis.min.js"></script>
 <script>
   function esc(s){ const d=document.createElement('div'); d.textContent = s==null?'':String(s); return d.innerHTML; }
   fetch('/renaissance-assets/generated/writings.json').then(r=>r.ok?r.json():[]).catch(()=>[]).then(essays => {
