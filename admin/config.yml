@@ -6,8 +6,8 @@ publish_mode: simple
 media_folder: "renaissance-assets/img/uploads"
 public_folder: "/renaissance-assets/img/uploads"
 
-   site_url: https://melodic-beijinho-3cf64a.netlify.app
-   display_url: https://melodic-beijinho-3cf64a.netlify.app
+site_url: https://melodic-beijinho-3cf64a.netlify.app
+display_url: https://melodic-beijinho-3cf64a.netlify.app
 
 collections:
   - name: "writings"
