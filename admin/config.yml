@@ -1,0 +1,62 @@
+backend:
+  name: git-gateway
+  branch: main
+
+publish_mode: simple
+media_folder: "renaissance-assets/img/uploads"
+public_folder: "/renaissance-assets/img/uploads"
+
+site_url: https://your-site-name.netlify.app
+display_url: https://your-site-name.netlify.app
+
+collections:
+  - name: "writings"
+    label: "Writings"
+    label_singular: "Writing"
+    description: "Long-form essays."
+    folder: "content/writings"
+    create: true
+    delete: true
+    slug: "{{slug}}"
+    identifier_field: title
+    summary: "{{title}} — {{category}} — {{published}}"
+    fields:
+      - { label: "Title", name: "title", widget: "string" }
+      - { label: "URL slug", name: "slug", widget: "string", hint: "Letters, numbers and hyphens only — this becomes the page address." }
+      - { label: "Category", name: "category", widget: "select", options: ["PHILOSOPHY", "HISTORY", "RELIGION", "POLITICS", "RESEARCH"] }
+      - { label: "Excerpt / hook line", name: "excerpt", widget: "text", hint: "Shown on the homepage and archive, and used as the pull-quote in the middle of the essay." }
+      - { label: "Date", name: "date", widget: "datetime", format: "YYYY-MM-DD", date_format: "YYYY-MM-DD", time_format: false }
+      - { label: "Hero image", name: "heroImage", widget: "image", required: false, hint: "Optional — falls back to a themed painting by category if left blank." }
+      - { label: "Body", name: "body", widget: "markdown", hint: "Blank line = new paragraph. \"## Heading\" for a sub-heading. A markdown table (| col | col |) renders as a data table." }
+      - { label: "Featured on homepage", name: "featured", widget: "boolean", default: false }
+      - { label: "Published", name: "published", widget: "boolean", default: true }
+
+  - name: "thoughts"
+    label: "Thoughts"
+    label_singular: "Thought"
+    description: "The homepage's horizontal Thought archive. Three fields, publish in seconds — it appears as the next tile automatically."
+    folder: "content/thoughts"
+    create: true
+    delete: true
+    slug: "{{slug}}"
+    identifier_field: title
+    summary: "{{title}}"
+    fields:
+      - { label: "Title", name: "title", widget: "string", hint: "The thought, question or observation itself." }
+      - { label: "Explanation", name: "explanation", widget: "text", required: true, hint: "The longer explanation underneath the title." }
+      - { label: "Image", name: "image", widget: "image", required: true, hint: "One image for this thought's tile." }
+      - { label: "Published", name: "published", widget: "boolean", default: true }
+
+  - name: "books"
+    label: "Books"
+    label_singular: "Book"
+    description: "The animated book corridor beneath the Reading Desk. Two fields, nothing else — add a cover and it joins the stream automatically."
+    folder: "content/books"
+    create: true
+    delete: true
+    slug: "{{slug}}"
+    identifier_field: name
+    summary: "{{name}}"
+    fields:
+      - { label: "Book name", name: "name", widget: "string" }
+      - { label: "Book image", name: "image", widget: "image", required: true, hint: "The book's cover — this is the only thing shown in the corridor." }

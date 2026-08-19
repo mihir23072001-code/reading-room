@@ -1,0 +1,32 @@
+[
+  {
+    "slug": "exploring-monotheism",
+    "title": "Exploring Monotheism",
+    "category": "RELIGION",
+    "excerpt": "What kinds of questions are emphasised by religious traditions, and what kinds by philosophy?",
+    "date": "2026-08-18",
+    "readingTime": 3,
+    "heroImage": "/renaissance-assets/img/garden.jpg",
+    "featured": true
+  },
+  {
+    "slug": "gold-milk-a-new-yardstick-for-inflation",
+    "title": "Gold ⇄ Milk: A New Yardstick for Inflation",
+    "category": "RESEARCH",
+    "excerpt": "How many litres of milk can one gram of gold buy?",
+    "date": "2026-08-18",
+    "readingTime": 3,
+    "heroImage": "/renaissance-assets/img/featured-writings.jpg",
+    "featured": true
+  },
+  {
+    "slug": "is-i-creation",
+    "title": "Is “I” Creation?",
+    "category": "PHILOSOPHY",
+    "excerpt": "If my instincts do not neatly fit a religious rulebook, what does that say about creation, choice and identity?",
+    "date": "2026-08-18",
+    "readingTime": 2,
+    "heroImage": "/renaissance-assets/img/reader.jpg",
+    "featured": true
+  }
+]

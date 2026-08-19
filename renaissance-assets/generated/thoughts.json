@@ -1,0 +1,50 @@
+[
+  {
+    "id": "idea-03",
+    "title": "History remembers decisions after knowing their consequences. The people making them did not.",
+    "explanation": "",
+    "image": "/renaissance-assets/img/featured-writings.jpg",
+    "createdAt": "2026-08-15T09:00:00.000Z",
+    "updatedAt": "2026-08-15T09:00:00.000Z"
+  },
+  {
+    "id": "idea-02",
+    "title": "If two religions claim incompatible truths, what exactly does faith resolve?",
+    "explanation": "",
+    "image": "/renaissance-assets/img/garden-bust.jpg",
+    "createdAt": "2026-08-14T09:00:00.000Z",
+    "updatedAt": "2026-08-14T09:00:00.000Z"
+  },
+  {
+    "id": "idea-01",
+    "title": "Truth cannot always be explained simply.",
+    "explanation": "Some experiences may sit outside the reach of shared language altogether — not withheld, just untranslatable.",
+    "image": "/renaissance-assets/img/crossroads.jpg",
+    "createdAt": "2026-08-13T09:00:00.000Z",
+    "updatedAt": "2026-08-13T09:00:00.000Z"
+  },
+  {
+    "id": "can-we-trust-what-we-see",
+    "title": "Can We Trust What We See!?",
+    "explanation": "Human sight covers only a narrow slice of the electromagnetic spectrum, and it isn't even consistent across species — a snake senses infrared, a tiger sees at night, a cow likely sees something else again. If perception is one of our main claims to knowledge, and it's this limited and this subjective, how much of what we call reality is simply a version shaped for our own survival?",
+    "image": "/renaissance-assets/img/reader.jpg",
+    "createdAt": "2026-08-12T09:00:00.000Z",
+    "updatedAt": "2026-08-12T09:00:00.000Z"
+  },
+  {
+    "id": "comparing-religious-and-philosophical-depth",
+    "title": "Comparing Religious and Philosophical Depth",
+    "explanation": "Most religions that forbid eating certain animals believe in one God who created everything. But if everything comes from the same source, refusing one form of that creation while accepting another starts to look inconsistent — a line drawn between things that, by the belief's own logic, were never really separate.",
+    "image": "/renaissance-assets/img/garden.jpg",
+    "createdAt": "2026-08-11T09:00:00.000Z",
+    "updatedAt": "2026-08-11T09:00:00.000Z"
+  },
+  {
+    "id": "why-the-truth-is-not-explained-simply",
+    "title": "Why the Truth Is Not Explained Simply",
+    "explanation": "Buddha, Krishna, Muhammad, Jesus — if they knew the ultimate truth, why speak in metaphor instead of plain words? Maybe because some experiences have no reference point in ordinary language, the way a monkey who has never seen a dinosaur has no word to describe one. Some truths may only be experienced, never fully said.",
+    "image": "/renaissance-assets/img/library-doorway.jpg",
+    "createdAt": "2026-08-10T09:00:00.000Z",
+    "updatedAt": "2026-08-10T09:00:00.000Z"
+  }
+]
