@@ -17,6 +17,8 @@ collections:
     folder: "content/writings"
     create: true
     delete: true
+    extension: "json"
+    format: "json"
     slug: "{{slug}}"
     identifier_field: title
     summary: "{{title}} — {{category}} — {{published}}"
@@ -38,6 +40,8 @@ collections:
     folder: "content/thoughts"
     create: true
     delete: true
+    extension: "json"
+    format: "json"
     slug: "{{slug}}"
     identifier_field: title
     summary: "{{title}} — {{date}}"
@@ -55,6 +59,8 @@ collections:
     folder: "content/books"
     create: true
     delete: true
+    extension: "json"
+    format: "json"
     slug: "{{slug}}"
     identifier_field: name
     summary: "{{name}}"

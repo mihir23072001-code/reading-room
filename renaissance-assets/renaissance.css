@@ -191,7 +191,7 @@ body.touch .cursor-dot{ display:none; }
   background:linear-gradient(180deg, rgba(10,9,6,0.42) 0%, rgba(10,9,6,0.08) 30%, rgba(10,9,6,0.08) 62%, rgba(10,9,6,0.5) 100%);
 }
 .hero-inner{
-  position:relative; z-index:2; text-align:center; color:#F6F1E4; padding:0 20px;
+  position:relative; z-index:2; text-align:center; color:#F6F1E4; padding:96px 20px 24px;
 }
 .hero-kicker{
   font-family:var(--sans); font-size:12px; letter-spacing:0.22em; text-transform:uppercase; color:var(--candle);
@@ -243,6 +243,7 @@ body.touch .cursor-dot{ display:none; }
 .journal-sec{ background:var(--paper); position:relative; }
 .journal-head{ padding:clamp(70px,10vw,120px) 0 clamp(36px,5vw,54px); max-width:760px; }
 .journal-head h2{ font-size:clamp(30px,4vw,48px); margin-bottom:16px; }
+.journal-title{ font-size:clamp(48px,9vw,96px); font-weight:600; letter-spacing:-0.01em; }
 .journal-sub{ font-family:var(--serif); font-style:italic; font-size:17px; color:var(--ink-soft); line-height:1.55; max-width:520px; }
 
 .journal-entry{
