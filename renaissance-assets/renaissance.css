@@ -316,7 +316,8 @@ body.touch .cursor-dot{ display:none; }
 .marquee-row-b .marquee-track{ animation-name:marquee-right; animation-duration:52s; }
 @keyframes marquee-left{ from{ transform:translateX(0); } to{ transform:translateX(-50%); } }
 @keyframes marquee-right{ from{ transform:translateX(-50%); } to{ transform:translateX(0); } }
-.marquee-viewport:hover .marquee-track{ animation-play-state:paused; }
+/* Intentionally no hover-to-pause here — the Shelf keeps scrolling
+   continuously no matter where the pointer sits over it. */
 .mq-book{ flex:0 0 auto; width:clamp(110px,12vw,150px); }
 .mq-cover{
   width:100%; aspect-ratio:2/3; overflow:hidden; background:#1B1712; border-radius:2px;
