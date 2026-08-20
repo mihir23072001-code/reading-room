@@ -1,13 +1,10 @@
 /* THE READING ROOM — shared front-end behaviour.
-   Mobile-first, minimal scroll-jacking: almost every animation here is a
-   plain CSS transition/keyframe or a one-shot IntersectionObserver reveal.
-   The one deliberate exception is the hero video below, which is pinned via
-   CSS position:sticky and scrubbed frame-by-frame against scroll position —
-   that's the one place this site intentionally ties motion to scroll rather
-   than time. No external animation library — this file has zero
-   dependencies and works the same on a phone as it does on a desktop.
-   Respects prefers-reduced-motion throughout (see the sitewide override at
-   the bottom of renaissance.css). */
+   Mobile-first, no scroll-jacking: every animation here is either a plain
+   CSS transition/keyframe, or a one-shot IntersectionObserver reveal. There
+   is no pinned scroll, no horizontal scroll-hijacking and no external
+   animation library — this file has zero dependencies and works the same
+   on a phone as it does on a desktop. Respects prefers-reduced-motion
+   throughout (see the sitewide override at the bottom of renaissance.css). */
 
 (function(){
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -44,39 +41,6 @@
       heroCue.classList.toggle('hide', window.scrollY > window.innerHeight * 0.35);
     }
     window.addEventListener('scroll', onScrollCue, { passive:true });
-  }
-
-  /* ---------- hero video: scrubbed by scroll position instead of
-     autoplaying on its own timer. The hero sticks to the top of the
-     viewport for the extra height of .hero-video-wrap (see CSS); this
-     maps that same scroll range to the video's currentTime, so scrolling
-     forward advances the footage and scrolling back rewinds it. Skipped
-     entirely under prefers-reduced-motion, where CSS shows the static
-     fallback image instead and this video stays hidden/paused. ---------- */
-  const heroVideoWrap = document.querySelector('.hero-video-wrap');
-  const heroVideo = document.querySelector('.hero-video');
-  if (heroVideoWrap && heroVideo && !reduceMotion) {
-    let scrubReady = false;
-    heroVideo.pause();
-    heroVideo.addEventListener('loadedmetadata', function(){
-      scrubReady = true;
-      onScrollHeroVideo();
-    });
-    function onScrollHeroVideo(){
-      if (!scrubReady || !heroVideo.duration) return;
-      const scrollable = heroVideoWrap.offsetHeight - window.innerHeight;
-      const top = heroVideoWrap.getBoundingClientRect().top;
-      const progress = scrollable > 0 ? Math.min(1, Math.max(0, -top / scrollable)) : 0;
-      const target = progress * heroVideo.duration;
-      if (Math.abs(heroVideo.currentTime - target) > 0.03) heroVideo.currentTime = target;
-    }
-    let heroVideoTicking = false;
-    window.addEventListener('scroll', function(){
-      if (heroVideoTicking) return;
-      heroVideoTicking = true;
-      window.requestAnimationFrame(function(){ onScrollHeroVideo(); heroVideoTicking = false; });
-    }, { passive:true });
-    onScrollHeroVideo();
   }
 
   /* ---------- full-screen menu ---------- */
