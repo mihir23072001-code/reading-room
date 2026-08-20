@@ -37,13 +37,11 @@ body{
   color:var(--ink);
   font-family:var(--sans);
   -webkit-font-smoothing:antialiased;
-  overflow-x:hidden;
-  overflow-y:hidden; /* paired with overflow-x so the UA doesn't silently
-    compute overflow-y to "auto" (per spec, an unset axis next to a
-    non-visible one becomes auto) — that turned <body> into its own
-    scroll container and broke position:sticky in the hero. Body has no
-    fixed height, so nothing is actually clipped; <html> still scrolls
-    the page normally. */
+  overflow-x:hidden; /* NOTE: don't pair this with overflow-y:hidden here —
+    per spec, overflow set on <body> propagates to the viewport/root when
+    <html> doesn't declare its own overflow, so overflow-y:hidden on body
+    disables scrolling for the ENTIRE page, not just body's own box.
+    Learned that the hard way; leave overflow-y alone (default visible). */
 }
 img{ max-width:100%; display:block; }
 a{ color:inherit; text-decoration:none; }
