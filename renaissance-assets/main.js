@@ -229,22 +229,6 @@
     return cut.slice(0, cut.lastIndexOf(' ')) + '…';
   }
 
-  // Grid of cells for the Journal image's pixel-dissolve reveal (see the
-  // .pixel-grid/.pixel-cell rules in renaissance.css). Each cell gets its
-  // own transition-delay so they shrink away in a loose staggered wave
-  // rather than all at once — same idea as the page-transition curtain's
-  // per-layer delay, just on a small grid instead of full-page panels.
-  function pixelGridHTML(rows, cols){
-    let html = '';
-    for (let r = 0; r < rows; r++){
-      for (let c = 0; c < cols; c++){
-        const delay = ((r + c) * 0.025 + Math.random() * 0.1).toFixed(3);
-        html += `<div class="pixel-cell" style="transition-delay:${delay}s"></div>`;
-      }
-    }
-    return html;
-  }
-
   window.renderJournal = function(thoughts){
     const host = document.getElementById('journalList');
     if (!host || !thoughts || !thoughts.length) return;
@@ -256,7 +240,7 @@
       const hasExpl = !!(t.explanation && t.explanation.trim());
       entry.innerHTML = `
         <div class="wrap journal-grid">
-          <div class="journal-media">${t.image ? `<img src="${esc(t.image)}" alt="Renaissance-style artwork accompanying the thought: ${esc(t.title)}" loading="lazy" decoding="async"/><div class="pixel-grid">${pixelGridHTML(4, 6)}</div>` : ''}</div>
+          <div class="journal-media">${t.image ? `<img src="${esc(t.image)}" alt="Renaissance-style artwork accompanying the thought: ${esc(t.title)}" loading="lazy" decoding="async"/>` : ''}</div>
           <div class="journal-copy">
             <span class="jd">${esc(formatDate(t.createdAt))}</span>
             <h3 class="jtitle">${esc(t.title)}</h3>
@@ -285,7 +269,45 @@
     } else {
       revealEls.forEach(el=> el.classList.add('in-view'));
     }
+
+    initJournalParallax(host);
   };
+
+  /* ---------------- Journal image parallax on scroll ----------------
+     Adapted from a scroll-driven image-grid technique: rather than pinning
+     the section and scrubbing a whole grid through a GSAP/Lenis timeline,
+     each entry's own photo just drifts a little against the scroll as its
+     band passes through the viewport — a plain scroll listener writing a
+     transform, rAF-throttled, no pinning and no animation library, so
+     normal scroll physics are never touched. Skipped entirely under
+     reduced motion, in which case the image just sits at its normal,
+     unzoomed framing. */
+  function initJournalParallax(host){
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) return;
+    const imgs = [...host.querySelectorAll('.journal-media img')];
+    if (!imgs.length) return;
+
+    let ticking = false;
+    function update(){
+      const vh = window.innerHeight;
+      imgs.forEach(img => {
+        const rect = img.parentElement.getBoundingClientRect();
+        if (rect.bottom < -200 || rect.top > vh + 200) return; // well offscreen — skip the write
+        const center = rect.top + rect.height / 2;
+        // -1 (band's centre at the very bottom of the viewport) to
+        // 1 (band's centre at the very top) as it travels through.
+        const progress = (vh / 2 - center) / (vh / 2 + rect.height / 2);
+        const clamped = Math.max(-1, Math.min(1, progress));
+        img.style.transform = `scale(1.16) translateY(${(clamped * 7).toFixed(2)}%)`;
+      });
+      ticking = false;
+    }
+    window.addEventListener('scroll', () => {
+      if (!ticking) { requestAnimationFrame(update); ticking = true; }
+    }, { passive: true });
+    update();
+  }
 
   /* ---------------- Thoughts archive — the same set, laid out to browse ----------------
      Used by /thoughts.html: same tile template, same click-to-open modal,
