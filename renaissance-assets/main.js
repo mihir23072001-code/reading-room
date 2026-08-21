@@ -357,4 +357,21 @@
     fill(trackA, rowA);
     fill(trackB, rowB);
   };
+
+  /* ---------------- RECENT ARRIVALS grid — plain DOM population ----------------
+     Homepage only. Just builds the <li> markup for the newest dozen books
+     (books.json is already newest-first) — the pinned reveal/zoom
+     animation over this grid is a separate, GSAP-dependent script
+     (sticky-grid.js) that attaches afterwards; this function has no
+     animation logic of its own and works fine with that script absent. */
+  window.renderRecentGrid = function(books){
+    const grid = document.getElementById('sgsGrid');
+    const sec = document.querySelector('.sgs-sec');
+    if (!grid) return;
+    if (!books || !books.length) { if (sec) sec.style.display = 'none'; return; }
+    const recent = books.slice(0, 12);
+    grid.innerHTML = recent.map(b => `
+      <li class="sgs-item"><img class="sgs-cover" src="${esc(b.image)}" alt="Cover of ${esc(b.name)}" loading="lazy" decoding="async"/></li>
+    `).join('');
+  };
 })();

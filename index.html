@@ -78,9 +78,22 @@
     <div id="journalList"></div>
   </section>
 
+  <section class="sgs-sec" id="recent">
+    <div class="sgs-inner">
+      <div class="sgs-content">
+        <p class="eyebrow"><span class="num">03</span>RECENT ARRIVALS</p>
+        <h2 class="sgs-title">Newest to the shelf.</h2>
+        <p class="sgs-desc">The last few books to join it, before the rest scroll by below.</p>
+      </div>
+      <div class="sgs-gallery">
+        <ul class="sgs-grid" id="sgsGrid"></ul>
+      </div>
+    </div>
+  </section>
+
   <section class="marquee-sec" id="books">
     <div class="wrap marquee-head reveal">
-      <p class="eyebrow"><span class="num">03</span>THE SHELF</p>
+      <p class="eyebrow"><span class="num">04</span>THE SHELF</p>
       <h2>Every book that shaped a thought.</h2>
     </div>
     <div class="marquee-viewport">
@@ -95,7 +108,7 @@
         <img src="/renaissance-assets/img/hero-hands.jpg" alt="A detail crop of two reaching hands from the hero painting, used here as a symbolic image rather than a portrait."/>
       </div>
       <div class="about-copy reveal">
-        <p class="eyebrow"><span class="num">04</span>WHY THIS EXISTS</p>
+        <p class="eyebrow"><span class="num">05</span>WHY THIS EXISTS</p>
         <p class="statement">I read because I enjoy the moment an assumption becomes a question.</p>
         <p>This website is a record of that process — notes from books, history, philosophy, religion, politics and whatever else makes me stop and reconsider what I thought I understood.</p>
         <p>Not a collection of final answers. A record of changing questions.</p>
@@ -125,6 +138,15 @@
 </footer>
 
 <script src="/renaissance-assets/main.js"></script>
+<!-- Only the "Recent arrivals" section (below) uses these — the one place
+     on the site that pins the scroll and depends on an external library.
+     If either CDN script fails to load, sticky-grid.js notices and never
+     runs, and the section is already a normal, fully visible static grid
+     by default (see the .sgs- rules in renaissance.css), so nothing here
+     can break the rest of the page. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="/renaissance-assets/sticky-grid.js"></script>
 <script>
 (function(){
   Promise.all([
@@ -133,6 +155,9 @@
   ]).then(([thoughts, books]) => {
     if (window.renderJournal) window.renderJournal(thoughts || []);
     if (window.renderBookMarquee) window.renderBookMarquee(books || []);
+    if (window.renderRecentGrid) window.renderRecentGrid(books || []);
+    // grid markup exists now — let the pin/scrub animation attach to it
+    requestAnimationFrame(() => { if (window.initStickyGridScroll) window.initStickyGridScroll(); });
   });
 })();
 </script>
