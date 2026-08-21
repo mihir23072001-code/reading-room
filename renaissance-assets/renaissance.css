@@ -318,8 +318,10 @@ body.touch .cursor-dot{ display:none; }
    Replaces the earlier 3D perspective corridor with a plain two-row,
    opposite-direction marquee: cheap to run, easy to read on a phone, and
    still enough movement to read as "a shelf passing by" rather than a
-   static grid. Reduced motion freezes it (handled by the sitewide rule
-   at the bottom of this file); a book with no cover just shows its name. */
+   static grid. Reduced motion gives it its own clean, fully-static
+   fallback (see the .marquee-track override in the reduced-motion block
+   near the bottom of this file) rather than just freezing mid-scroll; a
+   book with no cover just shows its name. */
 .marquee-sec{ background:#100E0B; color:var(--paper); padding:clamp(70px,10vw,110px) 0; overflow:hidden; }
 .marquee-head{ margin-bottom:clamp(34px,5vw,54px); }
 .marquee-head .eyebrow{ color:var(--candle); }
@@ -557,6 +559,15 @@ table.jtable tr:hover td{ background:rgba(110,47,40,0.05); }
   *{ animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.15s !important; scroll-behavior:auto !important; }
   .reveal{ opacity:1; transform:none; }
   .pt-overlay{ display:none !important; }
+  /* The generic rule above (near-zero duration + iteration-count:1) is
+     fine for a one-shot fade-in, but for an infinite marquee it makes the
+     track jump straight to its end position and stay there — on an
+     iPhone with Reduce Motion on, that reads as "the Shelf is broken",
+     showing what looks like a stuck, half-cut-off row. This gives it a
+     clean static fallback instead: animation off, both rows reset to
+     their natural starting position, so it just reads as a normal row of
+     covers rather than a frozen scroll. */
+  .marquee-track{ animation:none !important; transform:translateX(0) !important; }
 }
 
 /* mobile base adjustments */
