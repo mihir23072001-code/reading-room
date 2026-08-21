@@ -577,7 +577,15 @@ table.jtable tr:hover td{ background:rgba(110,47,40,0.05); }
 @media (prefers-reduced-motion: reduce){
   *{ animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.15s !important; scroll-behavior:auto !important; }
   .reveal{ opacity:1; transform:none; }
-  .pt-overlay{ display:none !important; }
+  /* The page-transition curtain is a deliberate exception: it's core to how
+     the site moves between pages, not a decorative flourish, so it plays in
+     full even with Reduce Motion on (see main.js, which skips the
+     reduced-motion check for this one feature). The generic rule above would
+     otherwise clip its transition durations, so both restore their normal
+     timing here — transition-delay is untouched by the rule above, so the
+     five-layer stagger and the image fade timing still line up correctly. */
+  .pt-layer{ transition-duration:.5s !important; }
+  .pt-image-wrap{ transition-duration:.3s !important; }
   /* The generic rule above (near-zero duration + iteration-count:1) is
      fine for a one-shot fade-in, but for an infinite marquee it makes the
      track jump straight to its end position and stay there — on an
