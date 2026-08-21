@@ -21,6 +21,21 @@
     if (reduceMotion) {
       ptOverlay.remove();
     } else {
+      // One Renaissance object, chosen at random each page load, shown
+      // centred over the curtain while it covers the screen (see the
+      // fade timing on .pt-image-wrap in renaissance.css).
+      const ptImg = ptOverlay.querySelector('.pt-image');
+      if (ptImg) {
+        const PT_IMAGES = [
+          ['/renaissance-assets/img/pt-hourglass.jpg', 'An hourglass resting on a stack of leather-bound books.'],
+          ['/renaissance-assets/img/pt-armillary.jpg', 'A brass armillary sphere on a carved wooden stand.'],
+          ['/renaissance-assets/img/pt-quill.jpg', 'A quill resting against an inkwell beside a rolled scroll.'],
+          ['/renaissance-assets/img/pt-candle.jpg', 'A candle burning at the spine of an open book.'],
+        ];
+        const [src, alt] = PT_IMAGES[Math.floor(Math.random() * PT_IMAGES.length)];
+        ptImg.src = src;
+        ptImg.alt = alt;
+      }
       const PT_DURATION = 700; // longest transition-delay (.2s) + transition duration (.5s), in ms
       // two rAFs so the browser paints the "covered" state at least once
       // before the class flips — otherwise the very first page load can

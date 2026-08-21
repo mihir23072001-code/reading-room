@@ -487,6 +487,25 @@ footer.site{ background:var(--dark); color:var(--paper-on-dark-soft); padding:56
 .pt-layer:nth-child(5){ background:var(--dark); transition-delay:.2s; }
 .pt-overlay.pt-open .pt-layer{ clip-path:polygon(0% 0%,100% 0%,100% 0%,0% 0%); }
 
+/* A single Renaissance object (hourglass, armillary sphere, quill, candle —
+   picked at random by main.js) sits centred over the curtain while it's
+   covering the page. It fades out fast the moment the curtain starts
+   opening (so it's gone well before the panels finish clearing), and on
+   the way back in — when a click re-covers the page before navigating —
+   it waits until the panels have mostly closed before fading in, so it
+   never appears to float over the still-visible page underneath. */
+.pt-image-wrap{
+  position:absolute; inset:0; z-index:1;
+  display:flex; align-items:center; justify-content:center;
+  opacity:1; transition:opacity .3s ease .38s;
+}
+.pt-image{
+  width:clamp(84px,11vw,150px); height:auto;
+  opacity:.94;
+  filter:drop-shadow(0 10px 34px rgba(0,0,0,.55));
+}
+.pt-overlay.pt-open .pt-image-wrap{ opacity:0; transition:opacity .3s ease; }
+
 /* ============ page hero (sub-pages) ============ */
 .page-hero{ position:relative; padding:clamp(150px,20vw,220px) 0 clamp(60px,8vw,90px); background:var(--paper-deep); overflow:hidden; }
 .page-hero h1{ font-size:clamp(42px,7vw,88px); max-width:900px; }
