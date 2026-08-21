@@ -178,6 +178,8 @@ function pageShell({ title, description, heroImg, heroAlt, eyebrow, heading, des
 <link rel="stylesheet" href="/renaissance-assets/renaissance.css"/>
 </head>
 <body>
+<div class="pt-overlay" aria-hidden="true"><div class="pt-layer"></div><div class="pt-layer"></div><div class="pt-layer"></div><div class="pt-layer"></div><div class="pt-layer"></div></div>
+<noscript><style>.pt-overlay{display:none!important;}</style></noscript>
 <div class="grain"></div>
 <div class="progress-line" id="progressLine"></div>
 

@@ -11,6 +11,38 @@
   const isTouch = matchMedia('(hover:none), (pointer:coarse)').matches;
   if (isTouch) document.body.classList.add('touch');
 
+  /* ---------- page-transition curtain ----------
+     Every page loads with the .pt-overlay markup covering it (see the CSS);
+     this reveals it once JS is confirmed running, and re-covers it before
+     any internal link actually navigates, so every page-to-page jump on the
+     site shares the same open/close curtain instead of a plain hard cut. */
+  const ptOverlay = document.querySelector('.pt-overlay');
+  if (ptOverlay) {
+    if (reduceMotion) {
+      ptOverlay.remove();
+    } else {
+      const PT_DURATION = 700; // longest transition-delay (.2s) + transition duration (.5s), in ms
+      // two rAFs so the browser paints the "covered" state at least once
+      // before the class flips — otherwise the very first page load can
+      // skip straight to "open" with no transition to see.
+      requestAnimationFrame(() => requestAnimationFrame(() => ptOverlay.classList.add('pt-open')));
+      document.addEventListener('click', function (e) {
+        if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        const a = e.target.closest('a[href]');
+        if (!a || (a.target && a.target !== '_self') || a.hasAttribute('download')) return;
+        const href = a.getAttribute('href');
+        if (!href || href.startsWith('mailto:') || href.startsWith('tel:') || href.startsWith('#')) return;
+        let url;
+        try { url = new URL(href, window.location.href); } catch (err) { return; }
+        if (url.origin !== window.location.origin) return;
+        if (url.pathname === window.location.pathname && url.hash) return; // same-page anchor — let it jump normally
+        e.preventDefault();
+        ptOverlay.classList.remove('pt-open');
+        setTimeout(() => { window.location.href = url.href; }, PT_DURATION);
+      });
+    }
+  }
+
   /* ---------- nav scroll state ---------- */
   const nav = document.querySelector('.nav');
   function onScrollNav(){
