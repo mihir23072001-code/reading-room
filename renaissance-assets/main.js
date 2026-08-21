@@ -4,64 +4,11 @@
    is no pinned scroll, no horizontal scroll-hijacking and no external
    animation library — this file has zero dependencies and works the same
    on a phone as it does on a desktop. Respects prefers-reduced-motion
-   throughout (see the sitewide override at the bottom of renaissance.css),
-   with one deliberate exception: the page-transition curtain always plays,
-   since it's the site's core page-to-page transition rather than a
-   decorative flourish — see the comment at its definition below. */
+   throughout (see the sitewide override at the bottom of renaissance.css). */
 
 (function(){
-  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const isTouch = matchMedia('(hover:none), (pointer:coarse)').matches;
   if (isTouch) document.body.classList.add('touch');
-
-  /* ---------- page-transition curtain ----------
-     Every page loads with the .pt-overlay markup covering it (see the CSS);
-     this reveals it once JS is confirmed running, and re-covers it before
-     any internal link actually navigates, so every page-to-page jump on the
-     site shares the same open/close curtain instead of a plain hard cut.
-     Deliberate exception to prefers-reduced-motion: this curtain is the
-     site's core page-to-page transition, not a decorative flourish, so it
-     always plays — even with Reduce Motion on at the OS level. (Every other
-     animation on the site still respects that setting; see renaissance.css,
-     which also restores this feature's own transition timings inside the
-     reduced-motion media query so the effect isn't clipped there either.) */
-  const ptOverlay = document.querySelector('.pt-overlay');
-  if (ptOverlay) {
-    // One Renaissance object, chosen at random each page load, shown
-    // centred over the curtain while it covers the screen (see the
-    // fade timing on .pt-image-wrap in renaissance.css).
-    const ptImg = ptOverlay.querySelector('.pt-image');
-    if (ptImg) {
-      const PT_IMAGES = [
-        ['/renaissance-assets/img/pt-hourglass.jpg', 'An hourglass resting on a stack of leather-bound books.'],
-        ['/renaissance-assets/img/pt-armillary.jpg', 'A brass armillary sphere on a carved wooden stand.'],
-        ['/renaissance-assets/img/pt-quill.jpg', 'A quill resting against an inkwell beside a rolled scroll.'],
-        ['/renaissance-assets/img/pt-candle.jpg', 'A candle burning at the spine of an open book.'],
-      ];
-      const [src, alt] = PT_IMAGES[Math.floor(Math.random() * PT_IMAGES.length)];
-      ptImg.src = src;
-      ptImg.alt = alt;
-    }
-    const PT_DURATION = 700; // longest transition-delay (.2s) + transition duration (.5s), in ms
-    // two rAFs so the browser paints the "covered" state at least once
-    // before the class flips — otherwise the very first page load can
-    // skip straight to "open" with no transition to see.
-    requestAnimationFrame(() => requestAnimationFrame(() => ptOverlay.classList.add('pt-open')));
-    document.addEventListener('click', function (e) {
-      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-      const a = e.target.closest('a[href]');
-      if (!a || (a.target && a.target !== '_self') || a.hasAttribute('download')) return;
-      const href = a.getAttribute('href');
-      if (!href || href.startsWith('mailto:') || href.startsWith('tel:') || href.startsWith('#')) return;
-      let url;
-      try { url = new URL(href, window.location.href); } catch (err) { return; }
-      if (url.origin !== window.location.origin) return;
-      if (url.pathname === window.location.pathname && url.hash) return; // same-page anchor — let it jump normally
-      e.preventDefault();
-      ptOverlay.classList.remove('pt-open');
-      setTimeout(() => { window.location.href = url.href; }, PT_DURATION);
-    });
-  }
 
   /* ---------- nav scroll state ---------- */
   const nav = document.querySelector('.nav');

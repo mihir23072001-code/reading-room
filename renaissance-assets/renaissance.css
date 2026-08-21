@@ -318,10 +318,11 @@ body.touch .cursor-dot{ display:none; }
    Replaces the earlier 3D perspective corridor with a plain two-row,
    opposite-direction marquee: cheap to run, easy to read on a phone, and
    still enough movement to read as "a shelf passing by" rather than a
-   static grid. Reduced motion gives it its own clean, fully-static
-   fallback (see the .marquee-track override in the reduced-motion block
-   near the bottom of this file) rather than just freezing mid-scroll; a
-   book with no cover just shows its name. */
+   static grid. Deliberately ignores prefers-reduced-motion (see the
+   restoration rule in the reduced-motion block near the bottom of this
+   file) — continuous scrolling is the whole point of this section, not a
+   decorative aside, so it keeps moving on every device, iOS included, even
+   with Reduce Motion on. A book with no cover just shows its name. */
 .marquee-sec{ background:#100E0B; color:var(--paper); padding:clamp(70px,10vw,110px) 0; overflow:hidden; }
 .marquee-head{ margin-bottom:clamp(34px,5vw,54px); }
 .marquee-head .eyebrow{ color:var(--candle); }
@@ -465,47 +466,6 @@ footer.site{ background:var(--dark); color:var(--paper-on-dark-soft); padding:56
 .reveal{ opacity:0; transform:translateY(26px); transition:opacity .9s var(--ease), transform .9s var(--ease); }
 .reveal.in-view{ opacity:1; transform:translateY(0); }
 
-/* ============ page-transition curtain ============
-   A shared cross-page transition for a plain multi-page site (no client-side
-   router): every page loads hidden behind five stacked panels, which stagger
-   open on load to reveal it — see main.js. Clicking an internal link reverses
-   the same stagger to re-cover the page, then the real navigation happens
-   once it's fully covered. Pure CSS clip-path + transition-delay, no
-   animation library. The noscript rule next to the markup keeps pages
-   working with JS off; the reduced-motion override below removes it
-   entirely for anyone who's asked for less motion. */
-.pt-overlay{ position:fixed; inset:0; z-index:200; pointer-events:none; }
-.pt-layer{
-  position:absolute; inset:0;
-  clip-path:polygon(0% 0%,100% 0%,100% 100%,0% 100%);
-  transition:clip-path .5s var(--ease);
-}
-.pt-layer:nth-child(1){ background:var(--dark); transition-delay:0s; }
-.pt-layer:nth-child(2){ background:var(--ink); transition-delay:.05s; }
-.pt-layer:nth-child(3){ background:var(--burgundy); transition-delay:.1s; }
-.pt-layer:nth-child(4){ background:var(--ink); transition-delay:.15s; }
-.pt-layer:nth-child(5){ background:var(--dark); transition-delay:.2s; }
-.pt-overlay.pt-open .pt-layer{ clip-path:polygon(0% 0%,100% 0%,100% 0%,0% 0%); }
-
-/* A single Renaissance object (hourglass, armillary sphere, quill, candle —
-   picked at random by main.js) sits centred over the curtain while it's
-   covering the page. It fades out fast the moment the curtain starts
-   opening (so it's gone well before the panels finish clearing), and on
-   the way back in — when a click re-covers the page before navigating —
-   it waits until the panels have mostly closed before fading in, so it
-   never appears to float over the still-visible page underneath. */
-.pt-image-wrap{
-  position:absolute; inset:0; z-index:1;
-  display:flex; align-items:center; justify-content:center;
-  opacity:1; transition:opacity .3s ease .38s;
-}
-.pt-image{
-  width:clamp(84px,11vw,150px); height:auto;
-  opacity:.94;
-  filter:drop-shadow(0 10px 34px rgba(0,0,0,.55));
-}
-.pt-overlay.pt-open .pt-image-wrap{ opacity:0; transition:opacity .3s ease; }
-
 /* ============ page hero (sub-pages) ============ */
 .page-hero{ position:relative; padding:clamp(150px,20vw,220px) 0 clamp(60px,8vw,90px); background:var(--paper-deep); overflow:hidden; }
 .page-hero h1{ font-size:clamp(42px,7vw,88px); max-width:900px; }
@@ -577,24 +537,15 @@ table.jtable tr:hover td{ background:rgba(110,47,40,0.05); }
 @media (prefers-reduced-motion: reduce){
   *{ animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.15s !important; scroll-behavior:auto !important; }
   .reveal{ opacity:1; transform:none; }
-  /* The page-transition curtain is a deliberate exception: it's core to how
-     the site moves between pages, not a decorative flourish, so it plays in
-     full even with Reduce Motion on (see main.js, which skips the
-     reduced-motion check for this one feature). The generic rule above would
-     otherwise clip its transition durations, so both restore their normal
-     timing here — transition-delay is untouched by the rule above, so the
-     five-layer stagger and the image fade timing still line up correctly. */
-  .pt-layer{ transition-duration:.5s !important; }
-  .pt-image-wrap{ transition-duration:.3s !important; }
-  /* The generic rule above (near-zero duration + iteration-count:1) is
-     fine for a one-shot fade-in, but for an infinite marquee it makes the
-     track jump straight to its end position and stay there — on an
-     iPhone with Reduce Motion on, that reads as "the Shelf is broken",
-     showing what looks like a stuck, half-cut-off row. This gives it a
-     clean static fallback instead: animation off, both rows reset to
-     their natural starting position, so it just reads as a normal row of
-     covers rather than a frozen scroll. */
-  .marquee-track{ animation:none !important; transform:translateX(0) !important; }
+  /* The Shelf marquee deliberately ignores Reduce Motion: the generic rule
+     above (near-zero duration + iteration-count:1) would otherwise make its
+     infinite scroll jump straight to its end position and sit there — on
+     an iPhone with Reduce Motion on, that reads as "the Shelf is broken",
+     a stuck, half-cut-off row. Restoring its real animation here instead
+     keeps it scrolling normally everywhere, iOS included, regardless of
+     the OS-level setting. */
+  .marquee-track{ animation:marquee-left 46s linear infinite !important; }
+  .marquee-row-b .marquee-track{ animation-name:marquee-right !important; animation-duration:52s !important; }
 }
 
 /* mobile base adjustments */
