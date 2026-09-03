@@ -138,20 +138,29 @@
   }
   document.querySelectorAll('svg[data-orn]').forEach(buildAstrolabe);
 
-  /* ---------- hero: giant astrolabe background, rete turns with scroll ----------
-     The hero's background is now this instrument instead of a painting —
-     same generator as above, just huge (sized in CSS) and given a fixed
-     rim + turning rete like every other instance on the site. The turning
-     part here is different in kind from the small ornaments' auto-spin or
-     the hero's own particle drift: those are autonomous motion, always
-     running, deliberately exempt from Reduce Motion (see renaissance.css).
-     This one only moves because the reader is scrolling — it's the same
-     category of effect as the Journal image parallax below, which already
-     skips itself entirely under Reduce Motion. Motion that's tied to the
-     act of scrolling is exactly what that setting exists to suppress, so
-     this follows the Journal's example rather than the ambient effects'. */
+  /* ---------- hero: layered parallax — everything already in the hero,
+     just moving at different scroll-tied speeds ----------
+     No new section, no new image: the astrolabe rim, its turning rete,
+     the particle field and the title are the four layers, each getting
+     its own translateY rate as the reader scrolls through the hero, on
+     top of whatever else it was already doing (the rete keeps rotating,
+     the particles keep their own ambient rAF drift). Title moves least —
+     it's the thing meant to stay put and be read — the rim barely more,
+     the rete and the particle field the most, so they read as the
+     furthest-back, most atmospheric layer. This is scroll-tied motion,
+     same category as the Journal's image parallax below, so — like that
+     one — it's skipped entirely under Reduce Motion rather than forced;
+     the autonomous stuff (small ornaments' auto-spin, the particles' own
+     ambient drift) stays exempt from that setting, same as always. */
   const heroAstro = document.querySelector('.hero-astro');
   const heroRete = heroAstro && heroAstro.querySelector('.orn-rete');
+  const heroRim = heroAstro && heroAstro.querySelector('.orn-rim');
+  const heroInnerLayer = document.querySelector('.hero-inner');
+  // hero-scene.js (the particle canvas) loads via its own <script> tag after
+  // this one, so the canvas doesn't exist yet at this point — re-queried
+  // lazily inside the scroll handler below until it shows up, rather than
+  // captured once here and silently staying null forever.
+  let heroParticleLayer = document.querySelector('.hero-scene');
   if (heroAstro && heroRete) {
     requestAnimationFrame(() => requestAnimationFrame(() => heroAstro.classList.add('is-in')));
     const heroReduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -159,9 +168,13 @@
       const heroSection = document.querySelector('.hero');
       const HERO_ROTATE_DEG = 150;
       function onScrollHeroAstro(){
+        if (!heroParticleLayer) heroParticleLayer = document.querySelector('.hero-scene');
         const h = heroSection.offsetHeight || 1;
         const progress = Math.max(0, Math.min(1, window.scrollY / h));
-        heroRete.style.transform = `rotate(${progress * HERO_ROTATE_DEG}deg)`;
+        heroRete.style.transform = `translateY(${progress * 75}px) rotate(${progress * HERO_ROTATE_DEG}deg)`;
+        if (heroRim) heroRim.style.transform = `translateY(${progress * 45}px)`;
+        if (heroParticleLayer) heroParticleLayer.style.transform = `translateY(${progress * 75}px)`;
+        if (heroInnerLayer) heroInnerLayer.style.transform = `translateY(${progress * 20}px)`;
       }
       window.addEventListener('scroll', onScrollHeroAstro, { passive:true });
       onScrollHeroAstro();
