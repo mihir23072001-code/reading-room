@@ -214,6 +214,27 @@ body.touch .cursor-dot{ display:none; }
   display:flex; align-items:center; justify-content:center;
   background:var(--dark);
 }
+/* A soft, blurred pass of the painting sits behind everything else in the
+   hero — the astrolabe, the scrim, the particles — as pure depth texture,
+   not something meant to be read. It's oversized (inset goes past the
+   edges) and drifts vertically at its own scroll-tied rate in main.js, so
+   it reads as a slower-moving background plane against the astrolabe and
+   title sitting still above it: the classic layered-parallax feel, just
+   built from a single element and a scroll listener rather than a
+   library. Being first in the hero's DOM order is what keeps it behind
+   the later, un-z-indexed layers — no z-index juggling needed. */
+.hero-bg-parallax{
+  position:absolute; inset:-10% -6%;
+  overflow:hidden;
+  pointer-events:none;
+}
+.hero-bg-img{
+  width:100%; height:100%; object-fit:cover;
+  filter:blur(22px) saturate(0.85);
+  opacity:0.16;
+  transform:translateY(0);
+  will-change:transform;
+}
 /* The hero's background is now the astrolabe itself rather than the old
    painting — a giant version of the same generative instrument used as
    the small floating ornaments elsewhere (buildAstrolabe() in main.js;

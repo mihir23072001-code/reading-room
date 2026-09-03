@@ -168,6 +168,26 @@
     }
   }
 
+  /* ---------- hero: blurred background parallax ----------
+     Same scroll-tied category as the astrolabe rotation right above and
+     the hands transition below — skipped under Reduce Motion rather than
+     forced, in which case the background just sits still (still blurred,
+     still low-opacity, nothing missing structurally, just no drift). */
+  const heroBgImg = document.querySelector('.hero-bg-img');
+  if (heroBgImg) {
+    const heroBgReduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!heroBgReduceMotion) {
+      const heroSectionForBg = document.querySelector('.hero');
+      function onScrollHeroBg(){
+        const h = heroSectionForBg.offsetHeight || 1;
+        const progress = Math.max(0, Math.min(1, window.scrollY / h));
+        heroBgImg.style.transform = `translateY(${progress * 14}%)`;
+      }
+      window.addEventListener('scroll', onScrollHeroBg, { passive:true });
+      onScrollHeroBg();
+    }
+  }
+
   /* ---------- hero → Journal: the hands transition ----------
      Same category of motion as the astrolabe's rotation just above and
      the Journal's own image parallax further down: tied directly to
