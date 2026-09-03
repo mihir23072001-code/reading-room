@@ -72,6 +72,72 @@
     });
   }
 
+  /* ---------- floating ornaments: generative astrolabe-rete SVG ----------
+     Built the same way a mandala generator works — primitive SVG shapes
+     assembled and rotated into place by code, not hand-typed paths — but
+     deliberately asymmetric rather than a mandala's evenly-repeated rings:
+     a real astrolabe's rete carries a handful of star-pointers at
+     irregular hand-picked angles/lengths reaching toward named stars, so
+     that's what STAR_SETS encodes. Runs once per empty svg[data-orn]
+     placeholder; the outer .orn-float/.orn-reveal classes (see CSS) handle
+     the ambient drift and scroll-in fade, this only builds and slowly
+     spins the instrument face itself. */
+  const svgNS = 'http://www.w3.org/2000/svg';
+  function svgEl(tag, attrs){
+    const e = document.createElementNS(svgNS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+  const ASTROLABE_STAR_SETS = [
+    [[15,68],[52,56],[98,78],[140,50],[187,70],[224,58],[268,82],[312,54]],
+    [[8,64],[63,74],[110,52],[151,80],[199,58],[241,68],[289,60],[334,76]],
+    [[25,76],[71,54],[103,66],[133,88],[176,58],[213,72],[257,50],[300,78]],
+  ];
+  function buildAstrolabe(svg){
+    const c = 100;
+    svg.setAttribute('viewBox', '0 0 200 200');
+    svg.innerHTML = '';
+
+    // fixed rim: outer circle + 72 degree ticks (every 30° drawn longer/bolder) — does not rotate
+    const rim = svgEl('g', { class: 'orn-rim' });
+    rim.appendChild(svgEl('circle', { cx: c, cy: c, r: 92, fill: 'none', stroke: 'var(--gold-leaf)', 'stroke-width': 1, opacity: 0.5 }));
+    for (let i = 0; i < 72; i++) {
+      const angle = i * 5;
+      const major = i % 6 === 0;
+      const tick = svgEl('line', { x1: c, y1: c - 92, x2: c, y2: c - 92 + (major ? 11 : 6), stroke: 'var(--gold-leaf)', 'stroke-width': major ? 1 : 0.6, opacity: 0.55 });
+      tick.setAttribute('transform', `rotate(${angle} ${c} ${c})`);
+      rim.appendChild(tick);
+    }
+    svg.appendChild(rim);
+
+    // rotating rete: offset ecliptic circle + zodiac dots + irregular star-pointers + index arm + pin
+    const rete = svgEl('g', { class: 'orn-rete' });
+    const ecCx = c, ecCy = c - 12, ecR = 54;
+    rete.appendChild(svgEl('circle', { cx: ecCx, cy: ecCy, r: ecR, fill: 'none', stroke: 'var(--burgundy)', 'stroke-width': 0.8, opacity: 0.55 }));
+    for (let z = 0; z < 12; z++) {
+      const za = (Math.PI * 2 / 12) * z;
+      rete.appendChild(svgEl('circle', { cx: ecCx + ecR * Math.sin(za), cy: ecCy - ecR * Math.cos(za), r: 1.6, fill: 'var(--burgundy)', opacity: 0.6 }));
+    }
+
+    let variant = 0;
+    if (svg.classList.contains('orn-b')) variant = 1;
+    else if (svg.classList.contains('orn-c')) variant = 2;
+    ASTROLABE_STAR_SETS[variant].forEach(([deg, len]) => {
+      const a = deg * Math.PI / 180;
+      const x2 = c + len * Math.sin(a), y2 = c - len * Math.cos(a);
+      rete.appendChild(svgEl('line', { x1: c, y1: c, x2, y2, stroke: 'var(--gold-leaf)', 'stroke-width': 0.7, opacity: 0.55 }));
+      rete.appendChild(svgEl('circle', { cx: x2, cy: y2, r: 2.2, fill: 'var(--gold-leaf)', opacity: 0.85 }));
+    });
+
+    // index arm — longer and bolder, like the rete's main pointer
+    rete.appendChild(svgEl('line', { x1: c, y1: c, x2: c, y2: c - 86, stroke: 'var(--burgundy)', 'stroke-width': 1.1, opacity: 0.7 }));
+    rete.appendChild(svgEl('polygon', { points: `${c},${c - 86} ${c - 4},${c - 76} ${c + 4},${c - 76}`, fill: 'var(--burgundy)', opacity: 0.7 }));
+    rete.appendChild(svgEl('circle', { cx: c, cy: c, r: 2.6, fill: 'var(--gold-leaf)' }));
+
+    svg.appendChild(rete);
+  }
+  document.querySelectorAll('svg[data-orn]').forEach(buildAstrolabe);
+
   /* ---------- reveal on scroll — one-shot fade/rise, IntersectionObserver only ---------- */
   const revealEls = document.querySelectorAll('.reveal');
   if ('IntersectionObserver' in window && revealEls.length) {

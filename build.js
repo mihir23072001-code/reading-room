@@ -205,7 +205,7 @@ function pageShell({ title, description, heroImg, heroAlt, eyebrow, heading, des
 <article>
   <section class="article-hero">
     <div class="article-hero-art"><img src="${heroImg}" alt="${esc(heroAlt)}"/></div>
-    <svg class="orn-float orn-reveal orn-articlehero orn-c" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><g fill="none" stroke="var(--gold-leaf)" stroke-width="1"><ellipse cx="50" cy="50" rx="38" ry="14"/><ellipse cx="50" cy="50" rx="38" ry="14" transform="rotate(60 50 50)"/><ellipse cx="50" cy="50" rx="38" ry="14" transform="rotate(120 50 50)"/><circle cx="50" cy="50" r="6"/><line x1="50" y1="6" x2="50" y2="94"/></g></svg>
+    <svg class="orn-float orn-reveal orn-articlehero orn-c" viewBox="0 0 200 200" aria-hidden="true" focusable="false" data-orn></svg>
     <div class="article-hero-inner wrap">
       <p class="eyebrow">${esc(eyebrow)}</p>
       <h1>${esc(heading)}</h1>
