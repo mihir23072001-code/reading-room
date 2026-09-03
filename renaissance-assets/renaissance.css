@@ -200,7 +200,17 @@ body.touch .cursor-dot{ display:none; }
 
 /* ============ HERO ============ */
 .hero{
-  position:relative; min-height:100svh; overflow:hidden;
+  position:relative; overflow:hidden;
+  /* Three stacked fallbacks, weakest first: plain vh for very old browsers,
+     svh (the viewport with mobile browser chrome — address bar, tab strip —
+     counted as visible) so the hero never renders taller than what's
+     actually on screen, then dvh (the *dynamic* viewport, which follows the
+     chrome showing/hiding as the user scrolls) as the most accurate modern
+     unit where it's supported. Each later line simply overrides the one
+     before it in browsers that understand it. */
+  min-height:100vh;
+  min-height:100svh;
+  min-height:100dvh;
   display:flex; align-items:center; justify-content:center;
   background:var(--dark);
 }
@@ -212,6 +222,15 @@ body.touch .cursor-dot{ display:none; }
   position:absolute; inset:0;
   background:linear-gradient(180deg, rgba(10,9,6,0.42) 0%, rgba(10,9,6,0.08) 30%, rgba(10,9,6,0.08) 62%, rgba(10,9,6,0.5) 100%);
 }
+/* Generative ambient particle layer — see hero-scene.js. Sits above the
+   scrim, below the title. Optional in every sense: absent entirely if
+   three.js doesn't load, and even once present it fades in on its own
+   rather than appearing with a hard cut. */
+.hero-scene{
+  position:absolute; inset:0; z-index:1; pointer-events:none;
+  opacity:0; transition:opacity 1.6s var(--ease);
+}
+.hero-scene.is-in{ opacity:1; }
 .hero-inner{
   position:relative; z-index:2; text-align:center; color:var(--paper-on-dark); padding:96px 20px 24px;
 }
@@ -602,6 +621,11 @@ table.jtable tr:hover td{ background:rgba(110,47,40,0.05); }
   .orn-float.orn-c{ animation-duration:9s !important; }
   .orn-reveal{ transition-duration:1.2s !important; }
   .orn-rete{ animation-duration:90s !important; animation-iteration-count:infinite !important; }
+  /* The hero's ambient particle drift (hero-scene.js) is driven by
+     requestAnimationFrame, not CSS, so this media query can't touch the
+     motion itself — that keeps running regardless, same policy as the rest
+     of this list. This line only restores its own fade-in transition. */
+  .hero-scene{ transition-duration:1.6s !important; }
 }
 
 /* mobile base adjustments */
