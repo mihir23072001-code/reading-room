@@ -466,6 +466,44 @@ footer.site{ background:var(--dark); color:var(--paper-on-dark-soft); padding:56
 .reveal{ opacity:0; transform:translateY(26px); transition:opacity .9s var(--ease), transform .9s var(--ease); }
 .reveal.in-view{ opacity:1; transform:translateY(0); }
 
+/* ============ floating ornaments — armillary-sphere motif ============
+   A small recurring line-art sketch of an armillary sphere (the instrument
+   already visible in the hero painting), used sparingly across the site as
+   a quiet decorative thread rather than scattered mixed shapes. Two
+   behaviours, kept deliberately separate so they don't fight each other on
+   the same `transform` property: .orn-float is a continuous ambient drift
+   (its own CSS animation, running always), .orn-reveal is a one-shot
+   scroll-triggered fade-in (a transition, toggled by main.js the same way
+   as .reveal). Both are deliberately exempt from prefers-reduced-motion —
+   see the restoration rules in the reduced-motion block below — because
+   continuous motion and its reveal are the entire point of a "floating"
+   ornament; flattening it to a static, instantly-visible sketch would just
+   be a different feature wearing the same name. Purely decorative:
+   aria-hidden, no pointer events, never covers or crowds real content. */
+.orn-float{
+  position:absolute; z-index:1; pointer-events:none;
+  width:clamp(64px,9vw,120px); height:auto;
+  animation:orn-drift 11s ease-in-out infinite;
+}
+.orn-float.orn-b{ animation-duration:14s; animation-delay:-4s; }
+.orn-float.orn-c{ animation-duration:9s; animation-delay:-2s; }
+@keyframes orn-drift{
+  0%,100%{ transform:translateY(0) rotate(0deg); }
+  50%{ transform:translateY(-16px) rotate(5deg); }
+}
+.orn-reveal{ opacity:0; transition:opacity 1.2s var(--ease); }
+.orn-reveal.in-view{ opacity:.42; }
+.orn-hero{ top:16%; right:5%; }
+.orn-journal{ top:6%; right:4%; }
+.orn-about{ top:9%; left:4%; }
+.orn-pagehero{ top:22%; right:6%; }
+.orn-articlehero{ top:24%; right:6%; }
+@media (max-width:640px){
+  /* Purely decorative and easy to crowd a narrow layout, so it steps aside
+     on small phones rather than being shrunk to near-illegibility. */
+  .orn-float{ display:none; }
+}
+
 /* ============ page hero (sub-pages) ============ */
 .page-hero{ position:relative; padding:clamp(150px,20vw,220px) 0 clamp(60px,8vw,90px); background:var(--paper-deep); overflow:hidden; }
 .page-hero h1{ font-size:clamp(42px,7vw,88px); max-width:900px; }
@@ -546,6 +584,12 @@ table.jtable tr:hover td{ background:rgba(110,47,40,0.05); }
      the OS-level setting. */
   .marquee-track{ animation:marquee-left 46s linear infinite !important; }
   .marquee-row-b .marquee-track{ animation-name:marquee-right !important; animation-duration:52s !important; }
+  /* The floating armillary-sphere ornaments get the same exemption, for the
+     same reason: a static, instantly-visible sketch isn't this feature. */
+  .orn-float{ animation-duration:11s !important; animation-iteration-count:infinite !important; }
+  .orn-float.orn-b{ animation-duration:14s !important; }
+  .orn-float.orn-c{ animation-duration:9s !important; }
+  .orn-reveal{ transition-duration:1.2s !important; }
 }
 
 /* mobile base adjustments */

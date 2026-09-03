@@ -87,6 +87,24 @@
   } else {
     revealEls.forEach(el=> el.classList.add('in-view'));
   }
+
+  /* ---------- floating-ornament reveal — same one-shot pattern as above,
+     kept separate from .reveal because it's deliberately NOT flattened to
+     an instant appearance under reduced motion (see renaissance.css). */
+  const ornEls = document.querySelectorAll('.orn-reveal');
+  if ('IntersectionObserver' in window && ornEls.length) {
+    const ioOrn = new IntersectionObserver((entries)=>{
+      entries.forEach(entry=>{
+        if (entry.isIntersecting) {
+          entry.target.classList.add('in-view');
+          ioOrn.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.14, rootMargin: '0px 0px -6% 0px' });
+    ornEls.forEach(el=> ioOrn.observe(el));
+  } else {
+    ornEls.forEach(el=> el.classList.add('in-view'));
+  }
 })();
 
 /* ============================================================
