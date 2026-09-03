@@ -227,65 +227,192 @@
 (function(){
   function esc(s){ const d=document.createElement('div'); d.textContent = s==null?'':String(s); return d.innerHTML; }
 
-  /* ---------------- Thought modal — explanation shown only on open ----------------
-     Shared by the homepage Journal and the /thoughts.html archive grid. The
-     open state shows only the title and the full description — no separate
-     image panel; the entry's own image becomes a blurred, darkened backdrop
-     behind that same text panel instead, so it's still present as
-     atmosphere without competing with the words. Built once, reused
-     everywhere, opened by click or Enter/Space on focus. */
+  /* ---------------- Journal colour system ----------------
+     Six intentional bright/dark pairings, always used in this order —
+     never assigned at random — so the sequence reads as a considered
+     design choice. Keyed by each entry's position in the published feed
+     (the order thoughts.json arrives in), which both the homepage Journal
+     and the /thoughts.html archive receive identically, so the same entry
+     always wears the same colours on either page, and the reading dialog
+     always inherits the palette of whichever card opened it. */
+  const PALETTE = [
+    { bg:'#2451ff', ink:'#fff6e4', soft:'rgba(255,246,228,.8)', accent:'#ffd24d' }, // electric blue / warm cream
+    { bg:'#0b1b2e', ink:'#c6ff6b', soft:'rgba(198,255,107,.75)', accent:'#7cffc7' }, // deep navy / acid green
+    { bg:'#ff5a3c', ink:'#1b140f', soft:'rgba(27,20,15,.72)',    accent:'#7a2e17' }, // coral / charcoal
+    { bg:'#330f1c', ink:'#49e4d6', soft:'rgba(73,228,214,.75)',  accent:'#ff8fbe' }, // burgundy / turquoise
+    { bg:'#ffc53d', ink:'#171208', soft:'rgba(23,18,8,.72)',     accent:'#ff5b3c' }, // warm yellow / black
+    { bg:'#1a1740', ink:'#c6b6ff', soft:'rgba(198,182,255,.75)', accent:'#8f7bff' }, // lavender / midnight
+  ];
+  function paletteAt(index){ return PALETTE[((index % PALETTE.length) + PALETTE.length) % PALETTE.length]; }
+  function applyPalette(el, p){
+    el.style.setProperty('--jc-bg', p.bg);
+    el.style.setProperty('--jc-ink', p.ink);
+    el.style.setProperty('--jc-soft', p.soft);
+    el.style.setProperty('--jc-accent', p.accent);
+  }
+
+  /* ---------------- Reading dialog — full-screen, coloured, scroll-shrinks ----------------
+     Shared by the homepage Journal and the /thoughts.html archive grid.
+     Two title elements handle the "shrink and lock" illusion instead of
+     one continuously-resized element: a big, plain in-flow `.thought-
+     modal-hero` (number + full title + full subhead) that scrolls away
+     normally at the top of the dialog's own content, and a small,
+     PERMANENTLY-fixed-size `.thought-modal-head` (sticky, top:0) that
+     crossfades in underneath it as the reader scrolls, then stays pinned.
+     This split exists to avoid a real feedback loop: an earlier version
+     shrank ONE sticky header's own padding/font-size directly off
+     scrollTop — but a sticky element's rendered size still counts toward
+     the scroll container's own scrollHeight, so as the header shrank, the
+     container's total scrollable height shrank under the reader's feet,
+     the browser clamped scrollTop back down, the header re-expanded, and
+     the cycle repeated — a visible snap-back-to-the-top stutter on any
+     entry short enough for the shrink distance to approach the entry's
+     total scroll room. Splitting the effect in two fixes it structurally:
+     the hero's height never changes (so it contributes a fixed, constant
+     amount to scrollHeight) and the compact head's padding/font-size are
+     plain fixed CSS, never animated — only `opacity`/`transform` move on
+     scroll (see syncModalHead), neither of which affects layout at all —
+     so scrollHeight can never move out from under the reader no matter
+     how short the entry is. `travel`, the scroll distance the crossfade
+     spans, comes from the hero block's OWN measured height (a static
+     number, fixed once per open), not from the entry's total scrollable
+     length, which is what makes this safe for entries of any length. */
   let modalEl = null;
+  let modalMetrics = null;
+  let modalFrame = 0;
+  const modalReduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function clamp01(v, lo, hi){ return Math.min(hi, Math.max(lo, v)); }
+  function mix(a, b, t){ return a + (b - a) * t; }
+
+  function resetModalHead(card){
+    ['--tm-hero-opacity','--tm-hero-shift','--tm-hero-scale','--tm-compact-opacity','--tm-compact-shift']
+      .forEach(prop => card.style.removeProperty(prop));
+    modalMetrics = null;
+  }
+  function syncModalHead(){
+    const card = modalEl && modalEl.querySelector('.thought-modal-card');
+    if (!modalMetrics || !card) return;
+    const travel = modalMetrics.travel;
+    const raw = clamp01((card.scrollTop - 6) / travel, 0, 1);
+    const progress = raw * raw * (3 - 2 * raw); // smoothstep ease — the "gradual, not sudden" curve
+    // The hero fades/lifts/shrinks away a little faster than the compact
+    // head fades in, so there's a brief, deliberate overlap rather than a
+    // hard cut — both are still fully driven by the same scroll-linked
+    // `progress`, just on slightly offset curves.
+    const heroProgress = clamp01(progress / .85, 0, 1);
+    const compactProgress = clamp01((progress - .15) / .85, 0, 1);
+    card.style.setProperty('--tm-hero-opacity', (1 - heroProgress).toFixed(3));
+    card.style.setProperty('--tm-hero-shift', `${(-heroProgress * 18).toFixed(2)}px`);
+    card.style.setProperty('--tm-hero-scale', (1 - heroProgress * .08).toFixed(3));
+    card.style.setProperty('--tm-compact-opacity', compactProgress.toFixed(3));
+    card.style.setProperty('--tm-compact-shift', `${((1 - compactProgress) * 10).toFixed(2)}px`);
+  }
+  function queueSyncModalHead(){
+    if (modalReduceMotion) return; // reduced motion: hero stays put, compact head never takes over — see prepareModalHead
+    if (modalFrame) return;
+    modalFrame = requestAnimationFrame(() => { modalFrame = 0; syncModalHead(); });
+  }
+  function prepareModalHead(){
+    if (modalReduceMotion) return;
+    const card = modalEl.querySelector('.thought-modal-card');
+    const hero = modalEl.querySelector('.thought-modal-hero');
+    const head = modalEl.querySelector('.thought-modal-head');
+    if (!card || !hero || !head) return;
+    // A static measurement taken once per open — the hero's own height
+    // never changes afterward (see the comment above), so this can never
+    // feed back into itself the way an every-frame layout measurement
+    // would. Subtract the compact head's height so the crossfade finishes
+    // right as the hero's bottom edge would reach the now-pinned compact
+    // head, not partway through empty space. Also capped against the
+    // entry's actual scrollable room, so a short entry still finishes its
+    // crossfade by the time the reader reaches the true bottom instead of
+    // leaving hero and compact head both stuck half-visible — safe to base
+    // on scrollHeight here (unlike the very first version of this dialog)
+    // because nothing in this design ever changes scrollHeight once open,
+    // so there's no feedback loop left to reintroduce.
+    const maxScroll = Math.max(0, card.scrollHeight - card.clientHeight);
+    const idealTravel = hero.offsetHeight - head.offsetHeight * .6;
+    const travel = maxScroll > 0
+      ? Math.max(90, Math.min(idealTravel, maxScroll * .96))
+      : Math.max(120, idealTravel);
+    modalMetrics = { travel };
+    syncModalHead();
+  }
+
   function ensureModal(){
     if (modalEl) return modalEl;
     modalEl = document.createElement('div');
     modalEl.className = 'thought-modal';
     modalEl.innerHTML = `
-      <div class="thought-modal-card" role="dialog" aria-modal="true">
-        <button class="thought-modal-close" aria-label="Close">×</button>
-        <img class="thought-modal-bg" alt=""/>
-        <div class="thought-modal-scrim"></div>
-        <div class="thought-modal-body">
-          <h3 class="thought-modal-title"></h3>
-          <div class="thought-modal-expl"></div>
+      <div class="thought-modal-card" role="dialog" aria-modal="true" aria-labelledby="thoughtModalTitle">
+        <div class="thought-modal-closebar"><button class="thought-modal-close" aria-label="Close">Close <span>×</span></button></div>
+        <div class="thought-modal-hero">
+          <p class="thought-modal-meta"></p>
+          <h2 class="thought-modal-title" id="thoughtModalTitle"></h2>
+          <p class="thought-modal-subhead"></p>
         </div>
+        <header class="thought-modal-head">
+          <p class="thought-modal-head-meta"></p>
+          <h3 class="thought-modal-head-title"></h3>
+        </header>
+        <section class="thought-modal-scroll-body">
+          <p class="thought-modal-bodylabel">The full note</p>
+          <div class="thought-modal-expl"></div>
+        </section>
       </div>
     `;
     document.body.appendChild(modalEl);
-    function close(){ modalEl.classList.remove('open'); }
+    function close(){
+      modalEl.classList.remove('open');
+      modalEl.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('dialog-open');
+    }
     modalEl.addEventListener('click', (e) => { if (e.target === modalEl) close(); });
     modalEl.querySelector('.thought-modal-close').addEventListener('click', close);
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && modalEl.classList.contains('open')) close(); });
+    modalEl.querySelector('.thought-modal-card').addEventListener('scroll', queueSyncModalHead, { passive:true });
     modalEl._close = close;
     return modalEl;
   }
-  function openThoughtModal(t){
+  function openThoughtModal(t, index){
     const modal = ensureModal();
-    const bg = modal.querySelector('.thought-modal-bg');
-    if (t.image) { bg.src = t.image; bg.style.display = ''; }
-    else { bg.style.display = 'none'; }
+    const card = modal.querySelector('.thought-modal-card');
+    const p = paletteAt(index == null ? 0 : index);
+    applyPalette(card, p);
+    resetModalHead(card);
+    const metaText = `JOURNAL / ${String((index == null ? 0 : index) + 1).padStart(2, '0')}`;
+    modal.querySelector('.thought-modal-meta').textContent = metaText;
     modal.querySelector('.thought-modal-title').textContent = t.title || '';
+    modal.querySelector('.thought-modal-subhead').textContent = subtitleOf(t);
+    modal.querySelector('.thought-modal-head-meta').textContent = metaText;
+    modal.querySelector('.thought-modal-head-title').textContent = t.title || '';
     const explEl = modal.querySelector('.thought-modal-expl');
     const hasExpl = !!(t.explanation && t.explanation.trim());
     explEl.innerHTML = hasExpl ? (t.explanationHtml || `<p>${esc(t.explanation)}</p>`) : '';
-    explEl.style.display = hasExpl ? '' : 'none';
+    card.scrollTop = 0;
     modal.classList.add('open');
-    modal.querySelector('.thought-modal-card').scrollTop = 0;
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('dialog-open');
+    modal.querySelector('.thought-modal-close').focus();
+    requestAnimationFrame(() => requestAnimationFrame(prepareModalHead));
   }
 
   /* One fixed tile template for the /thoughts.html archive grid: image on
-     top, near-black title plate below. */
-  function buildTile(t){
+     top, near-black title plate below, tinted with the same palette as
+     the matching homepage card. */
+  function buildTile(t, index){
     const el = document.createElement('div');
     el.className = 'thought-tile';
+    applyPalette(el, paletteAt(index));
     el.tabIndex = 0;
     el.setAttribute('role', 'button');
     el.setAttribute('aria-label', `Open thought: ${t.title || ''}`);
     el.innerHTML = `
-      <div class="ttmedia">${t.image ? `<img class="ttimg" src="${esc(t.image)}" alt="Renaissance-style artwork accompanying the thought: ${esc(t.title)}" loading="lazy" decoding="async"/>` : ''}</div>
+      <div class="ttmedia">${t.image ? `<img class="ttimg" src="${esc(t.image)}" alt="Renaissance-style artwork accompanying the thought: ${esc(t.title)}" loading="lazy" decoding="async"/>` : ''}<span class="tt-num" aria-hidden="true">${String(index + 1).padStart(2, '0')}</span></div>
       <div class="ttbody"><h3 class="tttitle">${esc(t.title)}</h3></div>
     `;
-    el.addEventListener('click', () => openThoughtModal(t));
-    el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openThoughtModal(t); } });
+    el.addEventListener('click', () => openThoughtModal(t, index));
+    el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openThoughtModal(t, index); } });
     return el;
   }
 
@@ -297,55 +424,70 @@
     return `${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
   }
 
-  /* ---------------- THE JOURNAL — vertical, alternating-colour entries ----------------
-     Homepage only. Renders straight from thoughts.json, newest first (the
-     order the feed already arrives in) — a new /admin entry just becomes
-     the next band. Each entry alternates a light/dark tone and reveals
-     with the same plain fade-up every other section on the site uses; no
-     pinning, no horizontal travel, nothing scroll-jacked. */
-  // The Journal band shows a short preview only; the stored explanation
-  // itself is never altered or truncated — the full, verbatim text (every
-  // paragraph, exactly as written) always renders in full in the modal
-  // opened by "Read the full thought". This just keeps the homepage
-  // scannable when an entry runs to several paragraphs.
-  function previewOf(text){
+  /* Both the card preview and the dialog subtitle read from the same first
+     real paragraph of the stored explanation (skipping "## heading" and
+     table blocks) — the card truncates it to stay scannable, the dialog
+     shows it complete. Neither ever edits the stored explanation itself;
+     the full, verbatim text always renders in full in the dialog body. */
+  function firstParagraph(text){
     const full = String(text || '').trim();
-    // skip "## Heading" and pipe-table blocks — those are structure, not
-    // prose — and preview from the first real paragraph instead.
-    const firstPara = full.split(/\n\s*\n/).find(p => {
+    const para = full.split(/\n\s*\n/).find(p => {
       const t = p.trim();
       return t && !/^#{2,3}\s+/.test(t) && !t.startsWith('|');
     }) || full;
-    const clean = firstPara.trim();
+    return para.trim();
+  }
+  function previewOf(text){
+    const clean = firstParagraph(text);
+    const full = String(text || '').trim();
     const hasMore = clean.length < full.length;
     if (clean.length <= 230) return clean + (hasMore ? '…' : '');
     const cut = clean.slice(0, 230);
     return cut.slice(0, cut.lastIndexOf(' ')) + '…';
   }
+  function subtitleOf(t){
+    return firstParagraph(t.explanation || t.excerpt || t.subtitle || '');
+  }
 
+  /* ---------------- THE JOURNAL — bold, colourful editorial cards ----------------
+     Homepage only. Renders straight from thoughts.json — a new /admin
+     entry just becomes the next card. Each one carries its own palette
+     (see PALETTE above), a number, the image, the subtitle preview and a
+     clear Open action; the reveal-on-scroll fade/rise below is a one-shot
+     IntersectionObserver trigger, and initJournalTilt adds a continuous,
+     reversible, scroll-tied depth tilt on top of it — nothing here pins
+     the section or hijacks scroll physics. */
   window.renderJournal = function(thoughts){
     const host = document.getElementById('journalList');
     if (!host || !thoughts || !thoughts.length) return;
     host.innerHTML = '';
 
     thoughts.forEach((t, i) => {
+      const p = paletteAt(i);
       const entry = document.createElement('article');
-      entry.className = `journal-entry reveal ${i % 2 === 0 ? 'tone-light' : 'tone-dark'}`;
+      entry.className = 'journal-entry reveal';
+      applyPalette(entry, p);
       const hasExpl = !!(t.explanation && t.explanation.trim());
       entry.innerHTML = `
         <div class="wrap journal-grid">
-          <div class="journal-media">${t.image ? `<img src="${esc(t.image)}" alt="Renaissance-style artwork accompanying the thought: ${esc(t.title)}" loading="lazy" decoding="async"/>` : ''}</div>
+          <div class="journal-media">
+            ${t.image ? `<img src="${esc(t.image)}" alt="Renaissance-style artwork accompanying the thought: ${esc(t.title)}" loading="lazy" decoding="async"/>` : ''}
+            <span class="journal-num" aria-hidden="true">${String(i + 1).padStart(2, '0')}</span>
+          </div>
           <div class="journal-copy">
-            <span class="jd">${esc(formatDate(t.createdAt))}</span>
+            <span class="journal-meta"><span class="jd">${esc(formatDate(t.createdAt))}</span><span class="jopen-badge">Open ↗</span></span>
             <h3 class="jtitle">${esc(t.title)}</h3>
             ${hasExpl ? `<p class="jprev">${esc(previewOf(t.explanation))}</p>` : ''}
-            <span class="jread" role="button" tabindex="0" aria-label="Open thought: ${esc(t.title)}">Read the full thought <span class="arrow">→</span></span>
+            <span class="jread" role="button" tabindex="0" aria-label="Open thought: ${esc(t.title)}">Open the full note <span class="arrow">→</span></span>
           </div>
         </div>
       `;
-      const trigger = entry.querySelector('.jread');
-      trigger.addEventListener('click', () => openThoughtModal(t));
-      trigger.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openThoughtModal(t); } });
+      const openThis = () => openThoughtModal(t, i);
+      entry.querySelector('.jread').addEventListener('click', openThis);
+      entry.querySelector('.jread').addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openThis(); } });
+      const media = entry.querySelector('.journal-media');
+      media.style.cursor = 'pointer';
+      media.addEventListener('click', openThis);
       host.appendChild(entry);
     });
 
@@ -365,6 +507,8 @@
     }
 
     initJournalParallax(host);
+    initJournalTilt(host);
+    initJournalMotion();
   };
 
   /* ---------------- Journal image parallax on scroll ----------------
@@ -403,14 +547,181 @@
     update();
   }
 
+  /* ---------------- Journal card depth — restrained scroll-tied tilt ----------------
+     Applied to .journal-grid (a plain, unclaimed child), never to
+     .journal-entry itself, which already owns the one-shot .reveal
+     fade/rise — setting an inline transform on the same element would
+     silently fight and win over that CSS-driven entrance. Small values on
+     purpose: this reads as "the stack has depth", not a gimmick. */
+  function initJournalTilt(host){
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) return;
+    const grids = [...host.querySelectorAll('.journal-grid')];
+    if (!grids.length) return;
+    let ticking = false;
+    function update(){
+      const vh = window.innerHeight;
+      grids.forEach(grid => {
+        const rect = grid.getBoundingClientRect();
+        if (rect.bottom < -200 || rect.top > vh + 200) return;
+        const center = rect.top + rect.height / 2;
+        const progress = (vh / 2 - center) / (vh / 2 + rect.height / 2);
+        const clamped = Math.max(-1, Math.min(1, progress));
+        const scale = 1 - Math.abs(clamped) * 0.035;
+        const tilt = clamped * -2.2;
+        grid.style.transform = `perspective(1400px) rotateX(${tilt.toFixed(2)}deg) scale(${scale.toFixed(3)})`;
+      });
+      ticking = false;
+    }
+    window.addEventListener('scroll', () => {
+      if (!ticking) { requestAnimationFrame(update); ticking = true; }
+    }, { passive: true });
+    update();
+  }
+
+  /* ---------------- Journal ambient motion — floating shapes behind the cards ----------------
+     Rings, glass prisms, drifting particles and one large rotating
+     numeral, generated once into a layer behind .journal-head and
+     #journalList (z-index puts it beneath both). Ambient drift/spin is
+     autonomous — same exemption as the Shelf marquee and the small
+     floating ornaments elsewhere on the site — but the extra scroll
+     parallax and the desktop pointer-follow are both interactive,
+     scroll/pointer-tied motion, so — unlike those autonomous effects —
+     this respects Reduce Motion directly, per this feature's own spec:
+     shapes stay put and visible, just without any of the three kinds of
+     movement layered on top. Touch devices get fewer shapes and no
+     pointer-follow (there's no hover pointer to follow), keeping the
+     layer light on mid-range Android hardware. */
+  let journalMotionBuilt = false;
+  function initJournalMotion(){
+    if (journalMotionBuilt) return;
+    const sec = document.querySelector('.journal-sec');
+    if (!sec) return;
+    journalMotionBuilt = true;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const isTouch = window.matchMedia('(hover: none), (pointer: coarse)').matches;
+
+    const layer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    layer.setAttribute('class', 'journal-motion' + (reduceMotion ? ' is-still' : ''));
+    layer.setAttribute('viewBox', '0 0 100 100');
+    layer.setAttribute('preserveAspectRatio', 'none');
+    layer.setAttribute('aria-hidden', 'true');
+    layer.setAttribute('focusable', 'false');
+
+    const NS = 'http://www.w3.org/2000/svg';
+    function el(tag, attrs){
+      const node = document.createElementNS(NS, tag);
+      Object.keys(attrs).forEach(k => node.setAttribute(k, attrs[k]));
+      return node;
+    }
+
+    const defs = el('defs', {});
+    PALETTE.forEach((p, i) => {
+      const grad = el('linearGradient', { id:`jm-grad-${i}`, x1:'0%', y1:'0%', x2:'100%', y2:'100%' });
+      const s1 = el('stop', { offset:'0%', 'stop-color':p.accent, 'stop-opacity':'0.85' });
+      const s2 = el('stop', { offset:'100%', 'stop-color':p.accent, 'stop-opacity':'0' });
+      grad.appendChild(s1); grad.appendChild(s2);
+      defs.appendChild(grad);
+    });
+    layer.appendChild(defs);
+
+    const rings = [
+      { cx:14, cy:22, r:9,  i:0, depth:.5, cls:'jm-ring jm-spin-a' },
+      { cx:88, cy:16, r:6,  i:3, depth:.8, cls:'jm-ring jm-spin-b' },
+      { cx:92, cy:70, r:11, i:1, depth:.35, cls:'jm-ring jm-spin-a' },
+    ];
+    rings.forEach(r => {
+      layer.appendChild(el('circle', {
+        class:r.cls, cx:r.cx, cy:r.cy, r:r.r, fill:'none',
+        stroke:`url(#jm-grad-${r.i})`, 'stroke-width':.5,
+        'data-depth':r.depth,
+      }));
+    });
+
+    if (!isTouch) {
+      const extraRing = el('circle', { class:'jm-ring jm-spin-b', cx:6, cy:82, r:5, fill:'none', stroke:`url(#jm-grad-4)`, 'stroke-width':.4, 'data-depth':.9 });
+      layer.appendChild(extraRing);
+    }
+
+    const prisms = [
+      { x:80, y:38, s:7, i:2, depth:.65, cls:'jm-prism jm-drift-a' },
+      { x:20, y:78, s:5, i:5, depth:.45, cls:'jm-prism jm-drift-b' },
+    ];
+    prisms.forEach(p => {
+      const rect = el('rect', {
+        class:p.cls, x:p.x - p.s/2, y:p.y - p.s/2, width:p.s, height:p.s,
+        fill:PALETTE[p.i].accent, 'fill-opacity':'0.14', stroke:PALETTE[p.i].accent, 'stroke-width':.3, 'stroke-opacity':.55,
+        transform:`rotate(45 ${p.x} ${p.y})`, 'data-depth':p.depth,
+      });
+      layer.appendChild(rect);
+    });
+
+    const numeral = el('text', {
+      class:'jm-numeral', x:97, y:96, 'text-anchor':'end',
+      'data-depth':.25,
+    });
+    numeral.textContent = '06';
+    layer.appendChild(numeral);
+
+    if (!isTouch) {
+      const particleCount = 10;
+      for (let i = 0; i < particleCount; i++) {
+        const p = PALETTE[i % PALETTE.length];
+        const cx = 8 + ((i * 9.3) % 88);
+        const cy = 8 + ((i * 17.7) % 86);
+        layer.appendChild(el('circle', {
+          class:'jm-particle', cx, cy, r:.35 + (i % 3) * .12,
+          fill:p.accent, 'data-depth':(.3 + (i % 5) * .12).toFixed(2),
+        }));
+      }
+    }
+
+    sec.insertBefore(layer, sec.firstChild);
+
+    if (reduceMotion) return; // shapes stay visible and static — no scroll or pointer motion
+
+    const shapes = [...layer.querySelectorAll('[data-depth]')];
+
+    let ticking = false;
+    function onScroll(){
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const rect = sec.getBoundingClientRect();
+        const vh = window.innerHeight;
+        const progress = Math.max(-1, Math.min(1, (vh / 2 - (rect.top + rect.height / 2)) / (vh / 2 + rect.height / 2)));
+        shapes.forEach(s => {
+          const depth = parseFloat(s.dataset.depth) || .5;
+          const py = parseFloat(s.dataset.px) || 0;
+          s.style.setProperty('--jm-scroll-y', `${(progress * depth * 9).toFixed(2)}px`);
+        });
+        ticking = false;
+      });
+    }
+    window.addEventListener('scroll', onScroll, { passive:true });
+    onScroll();
+
+    if (!isTouch) {
+      window.addEventListener('mousemove', (e) => {
+        const nx = (e.clientX / window.innerWidth - .5) * 2;
+        const ny = (e.clientY / window.innerHeight - .5) * 2;
+        shapes.forEach(s => {
+          const depth = parseFloat(s.dataset.depth) || .5;
+          s.style.setProperty('--jm-pointer-x', `${(nx * depth * 2.2).toFixed(2)}px`);
+          s.style.setProperty('--jm-pointer-y', `${(ny * depth * 2.2).toFixed(2)}px`);
+        });
+      }, { passive:true });
+    }
+  }
+
   /* ---------------- Thoughts archive — the same set, laid out to browse ----------------
-     Used by /thoughts.html: same tile template, same click-to-open modal,
+     Used by /thoughts.html: same tile template, same click-to-open dialog,
      in a plain responsive grid. */
   window.renderThoughtsGrid = function(thoughts){
     const host = document.getElementById('thoughtList');
     if (!host || !thoughts || !thoughts.length) return;
     host.innerHTML = '';
-    thoughts.forEach(t => host.appendChild(buildTile(t)));
+    thoughts.forEach((t, i) => host.appendChild(buildTile(t, i)));
   };
 
   /* ---------------- THE SHELF — simple CSS marquee ----------------
