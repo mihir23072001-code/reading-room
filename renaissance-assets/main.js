@@ -138,6 +138,36 @@
   }
   document.querySelectorAll('svg[data-orn]').forEach(buildAstrolabe);
 
+  /* ---------- hero: giant astrolabe background, rete turns with scroll ----------
+     The hero's background is now this instrument instead of a painting —
+     same generator as above, just huge (sized in CSS) and given a fixed
+     rim + turning rete like every other instance on the site. The turning
+     part here is different in kind from the small ornaments' auto-spin or
+     the hero's own particle drift: those are autonomous motion, always
+     running, deliberately exempt from Reduce Motion (see renaissance.css).
+     This one only moves because the reader is scrolling — it's the same
+     category of effect as the Journal image parallax below, which already
+     skips itself entirely under Reduce Motion. Motion that's tied to the
+     act of scrolling is exactly what that setting exists to suppress, so
+     this follows the Journal's example rather than the ambient effects'. */
+  const heroAstro = document.querySelector('.hero-astro');
+  const heroRete = heroAstro && heroAstro.querySelector('.orn-rete');
+  if (heroAstro && heroRete) {
+    requestAnimationFrame(() => requestAnimationFrame(() => heroAstro.classList.add('is-in')));
+    const heroReduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!heroReduceMotion) {
+      const heroSection = document.querySelector('.hero');
+      const HERO_ROTATE_DEG = 150;
+      function onScrollHeroAstro(){
+        const h = heroSection.offsetHeight || 1;
+        const progress = Math.max(0, Math.min(1, window.scrollY / h));
+        heroRete.style.transform = `rotate(${progress * HERO_ROTATE_DEG}deg)`;
+      }
+      window.addEventListener('scroll', onScrollHeroAstro, { passive:true });
+      onScrollHeroAstro();
+    }
+  }
+
   /* ---------- reveal on scroll — one-shot fade/rise, IntersectionObserver only ---------- */
   const revealEls = document.querySelectorAll('.reveal');
   if ('IntersectionObserver' in window && revealEls.length) {

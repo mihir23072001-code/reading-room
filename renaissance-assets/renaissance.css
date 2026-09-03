@@ -214,10 +214,32 @@ body.touch .cursor-dot{ display:none; }
   display:flex; align-items:center; justify-content:center;
   background:var(--dark);
 }
-.hero-art{
-  position:absolute; inset:0; will-change:transform;
+/* The hero's background is now the astrolabe itself rather than the old
+   painting — a giant version of the same generative instrument used as
+   the small floating ornaments elsewhere (buildAstrolabe() in main.js;
+   this element carries the same data-orn hook so it's built for free).
+   Its rim stays fixed, same as every other instance on the site; only the
+   inner rete turns, and here that rotation is driven directly by scroll
+   position through the hero rather than by the small ornaments' own
+   auto-spin — see the JS for why that's a deliberate, different choice
+   around reduced motion too. vmin sizing means it stays large and centred
+   relative to whichever screen dimension is tighter, phone or ultra-wide;
+   .hero's overflow:hidden lets it bleed off the edges rather than being
+   squeezed to fit. */
+.hero-astro{
+  position:absolute; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  opacity:0; transition:opacity 1.4s var(--ease);
 }
-.hero-art img{ width:100%; height:100%; object-fit:cover; object-position:50% 42%; transform:scale(1.03); }
+.hero-astro.is-in{ opacity:1; }
+.hero-astro-svg{ width:min(1300px, 115vmin); height:auto; }
+.hero-astro-svg .orn-rete{
+  /* Overrides the small ornaments' auto-spin (see .orn-rete elsewhere) —
+     this instance is turned by the scroll handler in main.js instead, via
+     an inline transform, which a running CSS animation would otherwise
+     fight and win over every frame. */
+  animation:none;
+}
 .hero-scrim{
   position:absolute; inset:0;
   background:linear-gradient(180deg, rgba(10,9,6,0.42) 0%, rgba(10,9,6,0.08) 30%, rgba(10,9,6,0.08) 62%, rgba(10,9,6,0.5) 100%);
