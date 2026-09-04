@@ -6,23 +6,24 @@
    ============================================================ */
 
 :root{
-  --paper:#E8E0D0;
-  --paper-deep:#DCD1B7;
-  --paper-line: rgba(23,21,16,0.16);
+  --paper:#F4EFE2;
+  --paper-deep:#E9E1CD;
+  --paper-line: rgba(23,21,16,0.14);
   --dark:#171510;
   --dark-2:#221E17;
   --dark-line: rgba(232,224,208,0.16);
-  --ink:#27231D;
+  --ink:#1B1712;
   --ink-soft:#4A4335;
   --muted:#7A7263;
-  /* The one colour on the whole site: warm sun-orange. Two colours total —
-     paper (+ink/pencil, which reads as neutral, not "a colour") and this
+  /* The one colour on the whole site: a flat burnt-orange/vermilion — no
+     gradient, no texture, no glow anywhere it's used. Two colours total —
+     parchment (+ink, which reads as neutral, not "a colour") and this
      orange — so every token that used to carry its own hue (burgundy,
      olive, gold-leaf, candle) is aliased straight to --sun below instead
      of keeping a separate value. That converts every existing accent-color
      usage site to orange without hunting each one down individually. */
-  --sun:#D9541E;
-  --sun-soft:rgba(217,84,30,0.14);
+  --sun:#E94B18;
+  --sun-soft:rgba(233,75,24,0.14);
   --burgundy:var(--sun);
   --burgundy-soft:var(--sun);
   --olive:var(--sun);
@@ -120,31 +121,37 @@ a:focus-visible, button:focus-visible, input:focus-visible{
 .statement.tight{ max-width:920px; }
 
 /* ============ NAV ============
-   Solid orange, always — not just past a scroll threshold. Two colours
-   only on this site, and the nav is where that reads loudest: paper
-   underneath, orange bar pinned on top of it. */
+   Printed directly onto the parchment — no bar, no fill, no shadow, no
+   scroll-triggered background swap. The nav sits on the same paper as
+   everything beneath it; only the thin type and the outlined orb read as
+   "header" at all. */
 .nav{
   position:fixed; top:0; left:0; right:0; z-index:60;
   display:flex; align-items:center; justify-content:space-between;
-  padding:22px clamp(20px,5vw,48px);
-  background:var(--sun);
-  color:var(--paper);
-  transition:padding .4s var(--ease), box-shadow .4s var(--ease);
-  border-bottom:1px solid transparent;
+  padding:clamp(24px,3.4vw,36px) clamp(20px,5vw,48px);
+  background:transparent;
+  color:var(--ink);
+  transition:padding .4s var(--ease);
 }
+/* Still no fill, no rectangle, no shadow — just enough blur once content
+   has scrolled beneath the fixed header for the thin type to stay
+   legible over whatever's passing underneath it. */
 .nav.scrolled{
-  padding-top:14px; padding-bottom:14px;
-  box-shadow:0 2px 18px rgba(23,21,16,0.18);
+  padding-top:16px; padding-bottom:16px;
+  backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
 }
-.nav-name{ font-family:var(--serif); font-weight:600; font-size:18px; letter-spacing:0.01em; }
-.nav-links{ display:flex; align-items:center; gap:34px; font-size:12.5px; letter-spacing:0.1em; text-transform:uppercase; font-weight:500; }
+.nav-name{ font-family:var(--serif); font-weight:600; font-size:14px; letter-spacing:0.24em; text-transform:uppercase; }
+.nav-links{ display:flex; align-items:center; gap:34px; font-size:11px; letter-spacing:0.14em; text-transform:uppercase; font-weight:600; color:var(--ink-soft); }
 .nav-links a{ position:relative; padding-bottom:3px; }
 .nav-links a::after{
-  content:''; position:absolute; left:0; right:100%; bottom:0; height:1px; background:currentColor;
+  content:''; position:absolute; left:0; right:100%; bottom:0; height:1px; background:var(--sun);
   transition:right .35s var(--ease);
 }
+.nav-links a:hover, .nav-links a.active{ color:var(--ink); }
 .nav-links a:hover::after, .nav-links a.active::after{ right:0; }
-.nav-menu-btn{ font-size:12.5px; letter-spacing:0.1em; text-transform:uppercase; font-weight:600; display:flex; align-items:center; gap:10px; }
+.nav-right{ display:flex; align-items:center; gap:24px; }
+.nav-orb{ width:15px; height:15px; border-radius:50%; border:1px solid var(--ink); display:inline-block; }
+.nav-menu-btn{ font-size:11px; letter-spacing:0.1em; text-transform:uppercase; font-weight:600; display:flex; align-items:center; gap:10px; }
 .nav-menu-btn .bars{ display:inline-flex; flex-direction:column; gap:4px; }
 .nav-menu-btn .bars span{ width:20px; height:1px; background:currentColor; display:block; transition:transform .3s var(--ease), opacity .3s var(--ease); }
 body.menu-open .nav-menu-btn .bars span:nth-child(1){ transform:translateY(5px) rotate(45deg); }
@@ -153,6 +160,7 @@ body.menu-open .nav-menu-btn .bars span:nth-child(3){ transform:translateY(-5px)
 
 @media (max-width:760px){
   .nav-links{ display:none; }
+  .nav-orb{ display:none; }
 }
 @media (min-width:761px){
   .nav-menu-btn{ display:none; }
@@ -214,74 +222,110 @@ body.menu-open .menu-links a:nth-child(5){ transition-delay:.40s; }
 body.touch .cursor-dot{ display:none; }
 @media (hover:none), (pointer:coarse){ .cursor-dot{ display:none; } }
 
-/* ============ HERO ============ */
+/* ============ HERO ============
+   Asymmetric editorial composition: type dominates the left column, the
+   ink-line portal illustration owns the right. One flat solid-orange
+   circle behind the headline is the strongest colour accent anywhere in
+   the hero — everything else (the construction lines, the astrolabes
+   elsewhere on the site) stays thin, faint and secondary to it. */
 .hero{
   position:relative; overflow:hidden;
-  /* Three stacked fallbacks, weakest first: plain vh for very old browsers,
-     svh (the viewport with mobile browser chrome — address bar, tab strip —
-     counted as visible) so the hero never renders taller than what's
-     actually on screen, then dvh (the *dynamic* viewport, which follows the
-     chrome showing/hiding as the user scrolls) as the most accurate modern
-     unit where it's supported. Each later line simply overrides the one
-     before it in browsers that understand it. */
   min-height:100vh;
   min-height:100svh;
   min-height:100dvh;
-  display:flex; align-items:center; justify-content:center;
+  display:flex; align-items:center;
   background:transparent; /* the page's own paper texture (set on body) shows through */
 }
-/* No background image any more — plain paper, same as every other
-   section (the body's own paper texture shows straight through .hero's
-   transparent background). In its place, one big compass/astrolabe
-   mandala (see buildAstrolabe in main.js — svg[data-orn] is all it takes)
-   sits centred behind the title, turning as the reader scrolls (see the
-   scroll listener in main.js) instead of sitting still — a deliberate,
-   explicit exception to "no scroll-tied motion" scoped to just this one
-   element, and gated behind prefers-reduced-motion like any other
-   interactive effect (the inner star-disc keeps its own slow autonomous
-   spin regardless — same ambient exemption as every other astrolabe on
-   the site). Low opacity throughout via .orn-reveal, so it reads as a
-   faint watermark behind the headline, never competing with it. */
-.hero-mandala{
-  position:absolute; top:50%; left:50%; z-index:1;
-  width:min(78vw,620px); height:auto;
-  transform:translate(-50%,-50%);
-  pointer-events:none;
+
+/* thin architectural construction lines — incomplete circles + guide
+   lines, built as a static SVG (see index.html): drawn with `pathLength`
+   + `stroke-dasharray` so each circle reads as an open arc rather than a
+   closed ring, no path-math required. Deliberately faint and behind the
+   type (z-index 0) — a delicate, secondary layer, never the focal point. */
+.hero-construct{
+  position:absolute; left:clamp(-6%,-2vw,0%); top:6%; z-index:0; pointer-events:none;
+  width:min(60vw,660px); aspect-ratio:1/1; height:auto;
 }
-.hero-inner{
-  position:relative; z-index:3; text-align:center; color:var(--ink); padding:96px 20px 24px;
+.hero-construct circle, .hero-construct line{
+  stroke:var(--sun); stroke-width:1.1; fill:none; opacity:0.32;
 }
+.hero-construct .hc-dot{ stroke:none; fill:var(--sun); opacity:0.5; }
+
+.hero-grid{
+  position:relative; z-index:3; width:100%;
+  display:grid; grid-template-columns:1.05fr 0.85fr; gap:clamp(24px,4.6vw,70px); align-items:center;
+  padding:clamp(118px,13vw,168px) 0 clamp(50px,7vw,80px);
+}
+.hero-left{ position:relative; z-index:2; }
+
 .hero-kicker{
-  font-family:var(--sans); font-size:12px; letter-spacing:0.04em; font-weight:600; color:var(--burgundy);
-  margin-bottom:30px;
+  font-family:var(--serif); font-style:italic; font-weight:500;
+  font-size:clamp(15px,1.5vw,19px); line-height:1.4; color:var(--ink-soft);
+  margin:0 0 clamp(22px,3.4vw,36px);
   opacity:0; animation:hero-rise .9s var(--ease) .15s forwards;
 }
 .hero-statement{
-  font-family:var(--serif); font-weight:500; font-size:clamp(60px,9vw,150px); line-height:0.86; letter-spacing:-0.01em;
+  position:relative;
+  font-family:var(--serif); font-weight:600; font-size:clamp(48px,6.4vw,108px); line-height:1.02; letter-spacing:-0.01em;
+  color:var(--ink);
+  margin-bottom:clamp(10px,1.6vw,20px);
 }
-.hero-statement .hw{ display:block; opacity:0; animation:hero-rise .9s var(--ease) forwards; }
+.hero-statement .hw{ position:relative; z-index:2; display:block; opacity:0; animation:hero-rise .9s var(--ease) forwards; }
 .hero-statement .hw:nth-child(1){ animation-delay:.28s; }
 .hero-statement .hw:nth-child(2){ animation-delay:.38s; opacity:0.9; }
 .hero-statement .hw:nth-child(3){ animation-delay:.48s; }
 .hero-statement .hw:nth-child(4){ animation-delay:.58s; font-style:italic; }
+
+/* THE one solid colour accent in the hero. Flat fill only — explicitly no
+   gradient, texture, glow, shadow or transparency anywhere on this shape.
+   Positioned to sit partially BEHIND the end of the ASSUME/SEARCH lines —
+   the letters (z-index 2) render on top of it (z-index 1). */
+.hero-circle{
+  position:absolute; z-index:1; pointer-events:none;
+  top:clamp(10px,3.6vw,34px); right:22%;
+  width:clamp(90px,11vw,170px); height:clamp(90px,11vw,170px);
+  border-radius:50%;
+  background:var(--sun);
+  opacity:0; animation:hero-rise .9s var(--ease) .5s forwards;
+}
 .hero-sub{
-  margin-top:34px; font-family:var(--sans); font-size:15px; letter-spacing:0.02em; color:var(--ink-soft);
-  max-width:520px; margin-left:auto; margin-right:auto; line-height:1.6;
+  margin-top:clamp(32px,4.4vw,50px); font-family:var(--sans); font-size:15px; letter-spacing:0.02em; color:var(--ink-soft);
+  max-width:420px; line-height:1.6;
   opacity:0; animation:hero-rise .9s var(--ease) .74s forwards;
 }
 @keyframes hero-rise{ from{ opacity:0; transform:translateY(16px); } to{ opacity:1; transform:translateY(0); } }
 
 .hero-cue{
-  position:absolute; left:50%; bottom:38px; transform:translateX(-50%); z-index:3; color:var(--muted);
-  display:flex; flex-direction:column; align-items:center; gap:10px; font-size:var(--fs-2xs); letter-spacing:0.14em;
-  text-transform:uppercase; opacity:0.85; transition:opacity .5s var(--ease);
+  margin-top:clamp(38px,5vw,60px); display:inline-flex; align-items:center; gap:11px;
+  font-family:var(--sans); font-size:11px; letter-spacing:0.16em; text-transform:uppercase; font-weight:700;
+  color:var(--sun); opacity:0.9; transition:opacity .5s var(--ease);
 }
 .hero-cue.hide{ opacity:0; }
-.hero-cue .stick{ width:1px; height:34px; background:currentColor; opacity:0.5; animation:hero-cue-bob 2.2s ease-in-out infinite; }
-@keyframes hero-cue-bob{ 0%,100%{ transform:scaleY(1); transform-origin:top; } 50%{ transform:scaleY(0.7); transform-origin:top; } }
+.hero-cue-dot{ width:14px; height:14px; border-radius:50%; border:1px solid currentColor; display:inline-block; }
+.hero-cue-arrow{ display:inline-block; animation:hero-cue-bob 2.2s ease-in-out infinite; }
+@keyframes hero-cue-bob{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(4px); } }
 
-@media (max-width:760px){
-  .hero-statement{ font-size:clamp(46px,15vw,72px); line-height:0.92; }
+/* right column — the monochrome portal illustration, integrated directly
+   into the hero (no card, no frame). mix-blend-mode:multiply drops the
+   artwork's white paper out against the page's own parchment tone, so it
+   reads as printed straight onto the same sheet rather than a pasted-in
+   photo. */
+.hero-right{ position:relative; z-index:2; }
+.hero-portal{ width:100%; }
+.hero-portal img{ width:100%; height:auto; display:block; mix-blend-mode:multiply; }
+.hero-quote{
+  position:absolute; top:1%; right:2%; z-index:3; max-width:150px; text-align:right;
+  font-family:var(--serif); font-style:italic; font-size:clamp(13px,1.3vw,16px); line-height:1.4;
+  color:var(--ink-soft);
+}
+
+@media (max-width:900px){
+  .hero-grid{ grid-template-columns:1fr; padding-top:clamp(112px,20vw,150px); gap:8px; }
+  .hero-right{ margin-top:18px; max-width:78vw; }
+  .hero-quote{ display:none; }
+  .hero-statement{ font-size:clamp(44px,13.5vw,72px); line-height:1.03; margin-bottom:8px; }
+  .hero-circle{ width:clamp(74px,21vw,116px); height:clamp(74px,21vw,116px); top:38px; right:9%; }
+  .hero-construct{ width:82vw; top:4%; }
 }
 
 .sr-only{
@@ -347,20 +391,27 @@ body.touch .cursor-dot{ display:none; }
 .jimg{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
 .journal-num{
   position:absolute; left:14px; bottom:14px; z-index:1;
-  font-family:var(--serif); font-weight:700; font-size:clamp(20px,2.4vw,28px); line-height:1;
-  padding:7px 14px; border-radius:999px;
+  display:flex; align-items:center; justify-content:center;
+  width:clamp(34px,3.4vw,42px); height:clamp(34px,3.4vw,42px); padding:0; border-radius:50%;
+  font-family:var(--serif); font-weight:700; font-size:clamp(13px,1.3vw,15px); line-height:1;
   background:var(--jc-accent,var(--sun)); color:var(--jc-bg,var(--paper-deep));
 }
 .journal-copy{ position:relative; max-width:640px; }
-.journal-meta{ display:flex; align-items:center; justify-content:space-between; gap:14px; margin-bottom:14px; }
+.journal-featured-label{
+  font-family:var(--sans); font-size:11px; letter-spacing:0.18em; text-transform:uppercase; font-weight:700;
+  color:var(--jc-accent,var(--sun)); margin:0 0 12px;
+}
+.journal-meta{ display:flex; align-items:center; justify-content:space-between; gap:14px; }
 .jd{
   font-family:var(--sans); font-size:11px; letter-spacing:0.1em; text-transform:uppercase;
   color:var(--jc-soft,var(--muted)); display:block;
 }
+.journal-rule{ display:block; width:36px; height:1px; margin:10px 0 16px; background:var(--jc-accent,var(--sun)); opacity:0.55; }
 .jtitle{
   font-family:var(--serif); font-weight:600; font-size:clamp(28px,4.2vw,52px); line-height:1.08; letter-spacing:-0.01em;
   color:var(--jc-ink,var(--ink));
 }
+.journal-entry:first-child .jtitle{ font-size:clamp(32px,5vw,62px); }
 .jprev{
   font-family:var(--serif); font-style:italic; font-size:16px; line-height:1.6;
   color:var(--jc-soft,var(--ink-soft)); margin-top:14px; max-width:520px;
@@ -382,6 +433,34 @@ body.touch .cursor-dot{ display:none; }
 @media (max-width:480px){
   .journal-grid{ padding:22px 18px; border-radius:14px; }
   .jtitle{ font-size:clamp(24px,7.4vw,34px); }
+}
+
+/* ---- mobile: compact editorial rows, image beside text (not stacked) ----
+   Below the 700px breakpoint above, override the default single-column
+   stack with a narrow media column + text column side by side, image
+   ~38% width, numbered circle overlapping its lower-right corner. */
+@media (max-width:699px){
+  .journal-grid{
+    grid-template-columns:38% 1fr; align-items:start;
+    gap:14px; padding:18px 16px; border-radius:12px;
+  }
+  .journal-entry:nth-child(even) .journal-media{ order:0; }
+  .journal-entry:nth-child(even) .journal-copy{ order:0; }
+  .journal-media{ aspect-ratio:4/5; }
+  .journal-num{
+    left:auto; right:-8px; bottom:-8px;
+    width:28px; height:28px; font-size:11px;
+    box-shadow:0 2px 8px rgba(23,21,16,0.22);
+  }
+  .journal-featured-label{ font-size:9.5px; margin-bottom:8px; }
+  .jd{ font-size:9.5px; }
+  .journal-rule{ width:24px; margin:6px 0 8px; }
+  .jtitle, .journal-entry:first-child .jtitle{ font-size:clamp(17px,5vw,21px); line-height:1.16; }
+  .jprev{
+    font-size:12.5px; line-height:1.5; margin-top:6px;
+    display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;
+  }
+  .jread{ font-size:10px; margin-top:8px; gap:5px; }
 }
 
 /* ============ Journal ambient layer — floating rings, glass prisms and
@@ -643,8 +722,9 @@ body.dialog-open{ overflow:hidden; }
 
 /* ============ FOOTER ============ */
 footer.site{ background:transparent; color:var(--ink-soft); padding:56px 0 40px; border-top:1px solid var(--paper-line); }
-.foot-grid{ display:flex; flex-wrap:wrap; justify-content:space-between; gap:30px; padding-bottom:34px; border-bottom:1px solid var(--paper-line); }
+.foot-grid{ display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:30px; padding-bottom:34px; border-bottom:1px solid var(--paper-line); }
 .foot-links{ display:flex; gap:30px; flex-wrap:wrap; font-size:12px; letter-spacing:0.08em; text-transform:uppercase; }
+.foot-orb{ width:15px; height:15px; border-radius:50%; border:1px solid var(--ink-soft); display:inline-block; flex:0 0 auto; }
 .foot-links a:hover{ color:var(--burgundy); }
 .foot-bottom{ display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px; padding-top:24px; font-size:11.5px; color:var(--muted); letter-spacing:0.04em; }
 

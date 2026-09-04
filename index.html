@@ -33,13 +33,16 @@
 <svg class="orn-fly fly-d" viewBox="0 0 200 200" aria-hidden="true" focusable="false" data-orn></svg>
 
 <nav class="nav">
-  <a href="/index.html" class="nav-name">The Reading Room</a>
+  <a href="/index.html" class="nav-name">Mihir Utopia</a>
   <div class="nav-links">
     <a href="/writings.html">Writings</a>
-    <a href="/thoughts.html">Thoughts</a>
+    <a href="/thoughts.html">Journal</a>
     <a href="/about.html">About</a>
   </div>
-  <button class="nav-menu-btn" aria-label="Open menu"><span class="bars"><span></span><span></span><span></span></span>Menu</button>
+  <div class="nav-right">
+    <button class="nav-menu-btn" aria-label="Open menu"><span class="bars"><span></span><span></span><span></span></span>Menu</button>
+    <span class="nav-orb" aria-hidden="true"></span>
+  </div>
 </nav>
 
 <div class="menu-overlay">
@@ -47,7 +50,7 @@
   <div class="menu-art"><img src="/renaissance-assets/img/garden-bust.jpg" alt="Marble bust from the garden painting, used as a decorative detail."/></div>
   <div class="menu-links">
     <a href="/writings.html"><span class="mn">01</span>Writings</a>
-    <a href="/thoughts.html"><span class="mn">02</span>Thoughts</a>
+    <a href="/thoughts.html"><span class="mn">02</span>Journal</a>
     <a href="/about.html"><span class="mn">03</span>About</a>
   </div>
   <div class="menu-foot">Notes from a reading desk — Mihir Panchal</div>
@@ -56,18 +59,33 @@
 <main>
 
   <section class="hero" id="home">
-    <svg class="hero-mandala orn-reveal" viewBox="0 0 200 200" aria-hidden="true" focusable="false" data-orn></svg>
-    <div class="hero-inner">
-      <p class="hero-kicker">A reading room, kept in public</p>
-      <h1 class="hero-statement">
-        <span class="hw">THINK.</span>
-        <span class="hw">ASSUME.</span>
-        <span class="hw">SEARCH.</span>
-        <span class="hw">REPEAT.</span>
-      </h1>
-      <p class="hero-sub">Notes from a reading desk: what I explore, question, and keep.</p>
+    <svg class="hero-construct" viewBox="0 0 600 600" aria-hidden="true" focusable="false">
+      <circle cx="430" cy="200" r="168" pathLength="100" stroke-dasharray="60 40"/>
+      <circle cx="110" cy="440" r="230" pathLength="100" stroke-dasharray="44 56"/>
+      <line x1="66" y1="0" x2="66" y2="600"/>
+      <line x1="0" y1="340" x2="600" y2="340"/>
+      <circle class="hc-dot" cx="430" cy="200" r="4"/>
+    </svg>
+    <div class="wrap hero-grid">
+      <div class="hero-left">
+        <p class="hero-kicker">A quest for deeper<br>questions in a noisy world.</p>
+        <h1 class="hero-statement">
+          <span class="hw">THINK.</span>
+          <span class="hw">ASSUME.</span>
+          <span class="hw">SEARCH.</span>
+          <span class="hw">REPEAT.</span>
+          <span class="hero-circle" aria-hidden="true"></span>
+        </h1>
+        <p class="hero-sub">Notes on philosophy, doubt, history and the things I haven't understood yet.</p>
+        <a href="#thoughts" class="hero-cue" id="heroCue"><span class="hero-cue-dot" aria-hidden="true"></span>Journal<span class="hero-cue-arrow" aria-hidden="true">↓</span></a>
+      </div>
+      <div class="hero-right">
+        <p class="hero-quote">The more<br>I learn,<br>the more<br>I realise<br>how little<br>I know.</p>
+        <div class="hero-portal">
+          <img src="/renaissance-assets/img/portal-illustration.jpg" alt="Ink-line illustration of a hooded figure seen from behind, walking toward a vast open doorway onto a mountain landscape." loading="eager"/>
+        </div>
+      </div>
     </div>
-    <div class="hero-cue" id="heroCue"><span>Begin with a question</span><span class="stick"></span></div>
   </section>
 
   <section class="journal-sec" id="thoughts">
@@ -112,17 +130,18 @@
 <footer class="site">
   <div class="wrap">
     <div class="foot-grid">
-      <div class="nav-name" style="font-size:16px;">Mihir Panchal</div>
+      <div class="nav-name" style="font-size:15px; letter-spacing:0.22em; text-transform:uppercase;">Mihir Utopia</div>
       <div class="foot-links">
         <a href="/writings.html">Writings</a>
-        <a href="/thoughts.html">Thoughts</a>
+        <a href="/thoughts.html">Journal</a>
         <a href="/about.html">About</a>
         <a href="mailto:panchalmihir2911@gmail.com">Email</a>
       </div>
+      <span class="foot-orb" aria-hidden="true"></span>
     </div>
     <div class="foot-bottom">
       <span>© Mihir Panchal</span>
-      <span>A reading room, not a resume.</span>
+      <span>A quieter mind · A wider world</span>
     </div>
   </div>
 </footer>
