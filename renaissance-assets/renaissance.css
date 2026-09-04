@@ -393,7 +393,7 @@ body.touch .cursor-dot{ display:none; }
   .hero-left{ margin-left:0; }
   .hero-quote{ display:none; }
   .hero-statement{ font-size:clamp(36px,11.4vw,60px); line-height:1.05; margin-bottom:8px; }
-  .hero-circle{ width:clamp(74px,21vw,116px); height:clamp(74px,21vw,116px); top:clamp(46px,15vw,90px); right:9%; }
+  .hero-circle{ width:clamp(52px,14vw,82px); height:clamp(52px,14vw,82px); top:clamp(66px,21vw,120px); right:9%; }
   .hero-construct{ width:82vw; top:4%; }
 
   /* the illustration: no longer flow content under the text — a full-bleed
