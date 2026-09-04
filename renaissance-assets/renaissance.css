@@ -352,20 +352,69 @@ body.touch .cursor-dot{ display:none; }
 .hero-right{ position:relative; z-index:2; }
 .hero-portal{ width:100%; background:transparent; }
 .hero-portal img{ width:100%; height:auto; display:block; background:transparent; }
+/* Mobile-only readability wash behind the headline — see the full-bleed
+   hero rewrite in the mobile media query below; not used on desktop, where
+   the illustration is a separate flow element, not a background layer. */
+.hero-veil{ display:none; }
 .hero-quote{
   position:absolute; top:1%; right:2%; z-index:3; max-width:150px; text-align:right;
   font-family:var(--serif); font-style:italic; font-size:clamp(13px,1.3vw,16px); line-height:1.4;
   color:var(--ink-soft);
 }
 
+/* ============ mobile hero — one continuous cinematic composition ============
+   Desktop keeps the side-by-side grid above untouched. Below 900px the
+   portal illustration stops being a flow element sitting under the text
+   and instead becomes a full-bleed background layer for the whole (taller)
+   hero section — the typography floats over its upper portion, the
+   doorway/figure continue, unobstructed, through the lower portion where
+   no text sits. Stacking order (back to front), matching the numbered
+   layering in the brief: parchment (body bg, nothing to declare) → the
+   illustration (z:-2) → a soft readability veil (z:-1) → the construction
+   lines (z:0, unchanged from the shared rule above) → the orange circle
+   (z:1, unchanged) → the typography (z:2/3, unchanged). Because the source
+   PNG is a true alpha cutout (ink pixels opaque, everything else
+   transparent — see index.html's comment), simply covering the section
+   with it already reads as "drawn onto the parchment", no extra blending
+   needed. */
 @media (max-width:900px){
-  .hero-grid{ grid-template-columns:1fr; padding-top:clamp(112px,20vw,150px); gap:8px; }
+  .hero{
+    align-items:flex-start;
+    min-height:132svh; min-height:132dvh;
+  }
+  /* z-index (not position) is enough here — .hero-grid is a flex item of
+     .hero, so it stacks above the negative-z-index background layers
+     without itself becoming their positioning context. Giving it
+     position:relative here was the bug in an earlier pass: it made
+     hero-right/hero-veil (position:absolute) anchor to hero-grid's own
+     (text-height-only) box instead of the full-height .hero section,
+     capping the "full-bleed" image to the height of the text block. */
+  .hero-grid{ position:static; grid-template-columns:1fr; padding-top:clamp(112px,20vw,150px); padding-left:9vw; padding-right:9vw; gap:8px; z-index:2; }
   .hero-left{ margin-left:0; }
-  .hero-right{ margin-top:18px; max-width:78vw; }
   .hero-quote{ display:none; }
-  .hero-statement{ font-size:clamp(44px,13.5vw,72px); line-height:1.03; margin-bottom:8px; }
+  .hero-statement{ font-size:clamp(36px,11.4vw,60px); line-height:1.05; margin-bottom:8px; }
   .hero-circle{ width:clamp(74px,21vw,116px); height:clamp(74px,21vw,116px); top:clamp(46px,15vw,90px); right:9%; }
   .hero-construct{ width:82vw; top:4%; }
+
+  /* the illustration: no longer flow content under the text — a full-bleed
+     background for the entire (taller) hero. Cover, never stretched. */
+  .hero-right{
+    position:absolute; inset:0; z-index:-2; margin:0; max-width:none; pointer-events:none;
+  }
+  .hero-portal{ width:100%; height:100%; }
+  .hero-portal img{ width:100%; height:100%; object-fit:cover; object-position:center 14%; }
+
+  /* soft parchment wash, only over the top ~2/3 where the headline sits —
+     fades to fully clear by where the figure/doorway carry on alone. */
+  .hero-veil{
+    display:block; position:absolute; inset:0; z-index:-1; pointer-events:none;
+    background:linear-gradient(180deg,
+      rgba(244,239,226,0.72) 0%,
+      rgba(244,239,226,0.66) 30%,
+      rgba(244,239,226,0.54) 44%,
+      rgba(244,239,226,0.24) 55%,
+      rgba(244,239,226,0) 65%);
+  }
 }
 
 .sr-only{
