@@ -20,6 +20,11 @@
   --olive:#59604A;
   --gold-leaf:#A9822F;
   --candle:#E3B872;
+  /* The one colour on the whole site — the warm sun-orange the sketch
+     videos bloom into as a reader scrolls to an entry. Everything else
+     stays pencil-on-paper; this is the single deliberate accent. */
+  --sun:#D9541E;
+  --sun-soft:rgba(217,84,30,0.14);
 
   /* text-on-dark tokens — consolidates ~10 one-off near-duplicate hexes
      that were scattered across dark sections (hero, Journal dark tone,
@@ -222,50 +227,34 @@ body.touch .cursor-dot{ display:none; }
   display:flex; align-items:center; justify-content:center;
   background:transparent; /* the page's own paper texture (set on body) shows through */
 }
-/* The hero's background is now the astrolabe itself rather than the old
-   painting — a giant version of the same generative instrument used as
-   the small floating ornaments elsewhere (buildAstrolabe() in main.js;
-   this element carries the same data-orn hook so it's built for free).
-   Its rim stays fixed, same as every other instance on the site; only the
-   inner rete turns, and here that rotation is driven directly by scroll
-   position through the hero rather than by the small ornaments' own
-   auto-spin — see the JS for why that's a deliberate, different choice
-   around reduced motion too. vmin sizing means it stays large and centred
-   relative to whichever screen dimension is tighter, phone or ultra-wide;
-   .hero's overflow:hidden lets it bleed off the edges rather than being
-   squeezed to fit. */
-.hero-astro{
-  position:absolute; inset:0;
-  display:flex; align-items:center; justify-content:center;
-  opacity:0; transition:opacity 1.4s var(--ease);
-}
-.hero-astro.is-in{ opacity:1; }
-.hero-astro-svg{ width:min(1300px, 115vmin); height:auto; }
-.hero-astro-svg .orn-rete{
-  /* Overrides the small ornaments' auto-spin (see .orn-rete elsewhere) —
-     this instance is turned by the scroll handler in main.js instead, via
-     an inline transform, which a running CSS animation would otherwise
-     fight and win over every frame. */
-  animation:none;
-}
+/* The hero's background is now the desk sketch itself — the same pencil
+   drawing of the writing desk that used to sit in its own section right
+   after the hero. Merging it in here means the very first thing a reader
+   sees is that desk, not an abstract instrument, and the page goes
+   straight from hero into the Journal with nothing between them. The
+   astrolabe mandala that used to fill this space is gone entirely — a
+   real drawing doesn't need an ornament standing in for one. */
+.hero-bg{ position:absolute; inset:0; z-index:0; }
+.hero-bg img{ width:100%; height:100%; object-fit:cover; display:block; }
 .hero-scrim{
-  position:absolute; inset:0;
-  /* a paper-deep vignette instead of the old dark one — same job (a little
-     depth at the top/bottom edges so the title reads clearly) but staying
-     inside the light paper family instead of muddying it */
-  background:linear-gradient(180deg, rgba(220,209,183,0.55) 0%, rgba(220,209,183,0.05) 30%, rgba(220,209,183,0.05) 62%, rgba(220,209,183,0.6) 100%);
+  position:absolute; inset:0; z-index:1;
+  /* A soft paper-toned haze, strongest where the title sits (roughly
+     centre) and fading out toward the edges, so the desk drawing stays
+     legible at the margins while the reading is never fighting the
+     linework behind it. */
+  background:radial-gradient(ellipse 60% 52% at 50% 46%, rgba(232,224,208,0.92) 0%, rgba(232,224,208,0.8) 38%, rgba(232,224,208,0.4) 62%, rgba(232,224,208,0.12) 82%, rgba(232,224,208,0.32) 100%);
 }
 /* Generative ambient particle layer — see hero-scene.js. Sits above the
    scrim, below the title. Optional in every sense: absent entirely if
    three.js doesn't load, and even once present it fades in on its own
    rather than appearing with a hard cut. */
 .hero-scene{
-  position:absolute; inset:0; z-index:1; pointer-events:none;
+  position:absolute; inset:0; z-index:2; pointer-events:none;
   opacity:0; transition:opacity 1.6s var(--ease);
 }
 .hero-scene.is-in{ opacity:1; }
 .hero-inner{
-  position:relative; z-index:2; text-align:center; color:var(--ink); padding:96px 20px 24px;
+  position:relative; z-index:3; text-align:center; color:var(--ink); padding:96px 20px 24px;
 }
 .hero-kicker{
   font-family:var(--sans); font-size:12px; letter-spacing:0.04em; font-weight:600; color:var(--burgundy);
@@ -288,7 +277,7 @@ body.touch .cursor-dot{ display:none; }
 @keyframes hero-rise{ from{ opacity:0; transform:translateY(16px); } to{ opacity:1; transform:translateY(0); } }
 
 .hero-cue{
-  position:absolute; left:50%; bottom:38px; transform:translateX(-50%); z-index:2; color:var(--muted);
+  position:absolute; left:50%; bottom:38px; transform:translateX(-50%); z-index:3; color:var(--muted);
   display:flex; flex-direction:column; align-items:center; gap:10px; font-size:var(--fs-2xs); letter-spacing:0.14em;
   text-transform:uppercase; opacity:0.85; transition:opacity .5s var(--ease);
 }
@@ -305,57 +294,6 @@ body.touch .cursor-dot{ display:none; }
   clip:rect(0,0,0,0); white-space:nowrap; border:0;
 }
 
-/* ============ THE DESK — a quiet, light bridge between the dark hero and
-   the dark Journal ============
-   Deliberately paper-toned (not dark) so the page reads dark → light →
-   dark going into the Journal, the same alternating rhythm the site
-   already uses elsewhere (About is paper-deep against a dark Shelf on
-   either side). "01" — the number the hero itself never wears, so this
-   slots into the existing 02 Journal / 03 Shelf / 04 About sequence with
-   nothing else renumbered. The seal video is a small, separate circular
-   companion to the copy — not composited onto the desk sketch itself,
-   since the two were generated independently and don't share a subject;
-   keeping them as two distinct beats (a small moving detail beside the
-   words, a large still sketch beneath) reads more intentional than trying
-   to force them into one image. */
-.desk-sec{
-  position:relative; overflow:hidden;
-  /* No longer paints its own copy of the texture — body now carries the
-     same tiled paper site-wide, and painting it again here at a different
-     tiling origin would create a visible seam where this section's phase
-     doesn't line up with the page's. Leaving this transparent lets the
-     one shared body layer show through with no seam at all. */
-  background:transparent;
-}
-.desk-grid{
-  display:grid; grid-template-columns:1fr; gap:32px; align-items:center;
-  padding:clamp(70px,10vw,120px) 0 0;
-}
-.desk-copy{ max-width:620px; }
-.desk-sub{
-  font-family:var(--serif); font-style:italic; font-size:17px; line-height:1.6;
-  color:var(--ink-soft); margin-top:14px; max-width:520px;
-}
-.desk-seal{
-  justify-self:start;
-  width:clamp(120px,16vw,180px); aspect-ratio:1/1; border-radius:50%; overflow:hidden;
-  box-shadow:0 18px 40px rgba(23,21,16,0.22), 0 0 0 1px var(--paper-line);
-  background:var(--paper-deep);
-}
-.desk-seal-video{ width:100%; height:100%; object-fit:cover; display:block; }
-.desk-figure{
-  margin-top:clamp(36px,6vw,64px); padding-bottom:clamp(50px,7vw,90px);
-}
-.desk-figure img{
-  width:100%; height:auto; display:block; border-radius:6px;
-  box-shadow:0 30px 60px -20px rgba(23,21,16,0.35);
-}
-@media (min-width:700px){
-  .desk-grid{ grid-template-columns:1fr auto; gap:clamp(30px,5vw,64px); }
-}
-@media (max-width:480px){
-  .desk-seal{ width:110px; }
-}
 
 /* ============ THE JOURNAL — colourful editorial cards, each with its own
    intentional palette ============
@@ -383,9 +321,10 @@ body.touch .cursor-dot{ display:none; }
   display:grid; grid-template-columns:1fr; gap:clamp(20px,3vw,30px);
   padding:clamp(28px,4.6vw,56px) clamp(22px,4vw,50px);
   border-radius:clamp(16px,2vw,26px);
-  background:var(--jc-bg,#171510); color:var(--jc-ink,#F1E9D8);
-  box-shadow:0 26px 60px -18px rgba(0,0,0,0.55), 0 1px 0 rgba(255,255,255,0.06) inset;
+  background:var(--jc-bg,var(--paper-deep)); color:var(--jc-ink,var(--ink));
+  box-shadow:0 26px 60px -18px rgba(23,21,16,0.28), 0 1px 0 var(--paper-line) inset;
   overflow:hidden;
+  backface-visibility:hidden; /* past 90deg mid-turn (initJournalTilt in main.js), vanish cleanly instead of showing a mirrored back face */
   will-change:transform;
 }
 .journal-grid::after{
@@ -393,62 +332,50 @@ body.touch .cursor-dot{ display:none; }
      colour — a signature echo of the reference project's page-number
      corner treatment without literally copying its layout */
   content:''; position:absolute; top:0; right:0; width:34%; height:34%;
-  background:var(--jc-accent,#E3B872); opacity:0.12;
+  background:var(--jc-accent,var(--sun)); opacity:0.12;
   clip-path:polygon(100% 0, 100% 100%, 0 0); pointer-events:none;
 }
 .journal-media{
-  position:relative; width:100%; aspect-ratio:16/10; overflow:hidden; background:#100E0B; border-radius:clamp(10px,1.4vw,16px);
+  position:relative; width:100%; aspect-ratio:16/10; overflow:hidden; background:var(--paper-deep); border-radius:clamp(10px,1.4vw,16px);
 }
-/* ============ Sketch-to-colour cover crossfade ============
-   Two images stacked exactly on top of each other (both absolute, filling
-   the same box) rather than one image whose filter is toggled — a real
-   swap between two actual pictures, not a CSS effect pretending to be one.
-   The sketch is always painted; the colour photo starts invisible and
-   crossfades in via opacity only once initSketchColorReveal (main.js)
-   adds .in-color to the parent — nothing here ever touches layout, so it
-   composes cleanly with the parallax transform (initJournalParallax) and
-   the page-turn transform (initJournalTilt) already applied to the whole
-   card and image respectively. */
+/* ============ Journal cover media ============
+   A single sketch — <img> for entries with no sun-video yet, or a
+   <video class="jvid-sun"> once one exists, scrubbed by scroll position
+   (initSunVideoScrub in main.js) rather than autoplaying. Either way it's
+   the one element filling this box, positioned to match the parallax
+   transform (initJournalParallax) and the page-turn transform
+   (initJournalTilt) already applied elsewhere on the card. */
 .jimg{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; will-change:transform; }
-.jimg-sketch{ z-index:1; }
-.jimg-color{ z-index:2; opacity:0; transition:opacity 1.4s var(--ease); }
-.in-color .jimg-color{ opacity:1; }
-/* Placeholder look for entries with no real sketch asset yet (t.sketch
-   empty) — an honest, clearly-approximate stand-in on the same photo,
-   never a broken image. Swapped out automatically the moment a real
-   sketch is uploaded through /admin, since sketchColorMedia() in main.js
-   only adds this class when t.sketch is empty. */
-.jimg-sketch--approx{ filter:grayscale(1) contrast(1.3) brightness(1.15) sepia(0.05); }
 .journal-num{
   position:absolute; left:14px; bottom:14px; z-index:1;
   font-family:var(--serif); font-weight:700; font-size:clamp(20px,2.4vw,28px); line-height:1;
   padding:7px 14px; border-radius:999px;
-  background:var(--jc-accent,#E3B872); color:var(--jc-bg,#171510);
+  background:var(--jc-accent,var(--sun)); color:var(--jc-bg,var(--paper-deep));
 }
 .journal-copy{ position:relative; max-width:640px; }
 .journal-meta{ display:flex; align-items:center; justify-content:space-between; gap:14px; margin-bottom:14px; }
 .jd{
   font-family:var(--sans); font-size:11px; letter-spacing:0.1em; text-transform:uppercase;
-  color:var(--jc-soft,var(--muted-on-dark)); display:block;
+  color:var(--jc-soft,var(--muted)); display:block;
 }
 .jopen-badge{
   font-family:var(--sans); font-size:10.5px; letter-spacing:0.09em; text-transform:uppercase; font-weight:700;
   padding:6px 12px; border-radius:999px; white-space:nowrap;
-  background:color-mix(in srgb, var(--jc-ink,#F1E9D8) 16%, transparent);
-  color:var(--jc-ink,#F1E9D8);
+  background:color-mix(in srgb, var(--jc-ink,var(--ink)) 16%, transparent);
+  color:var(--jc-ink,var(--ink));
 }
 .jtitle{
   font-family:var(--serif); font-weight:600; font-size:clamp(28px,4.2vw,52px); line-height:1.08; letter-spacing:-0.01em;
-  color:var(--jc-ink,#F1E9D8);
+  color:var(--jc-ink,var(--ink));
 }
 .jprev{
   font-family:var(--serif); font-style:italic; font-size:16px; line-height:1.6;
-  color:var(--jc-soft,var(--paper-on-dark-soft)); margin-top:14px; max-width:520px;
+  color:var(--jc-soft,var(--ink-soft)); margin-top:14px; max-width:520px;
 }
 .jread{
   margin-top:16px; display:inline-flex; align-items:center; gap:8px; cursor:pointer;
   font-family:var(--sans); font-size:13px; letter-spacing:0.02em; font-weight:700; text-transform:uppercase; letter-spacing:0.04em;
-  color:var(--jc-accent,var(--candle));
+  color:var(--jc-accent,var(--sun));
 }
 .jread .arrow{ transition:transform .25s var(--ease); }
 .journal-entry:hover .jread .arrow{ transform:translateX(5px); }
@@ -574,30 +501,32 @@ body.touch .cursor-dot{ display:none; }
    exists; the explanation lives in the shared modal, not the tile. */
 .thought-tile{
   position:relative; border-radius:3px; overflow:hidden; cursor:pointer;
-  display:flex; flex-direction:column; background:#100E0B;
-  box-shadow:inset 0 -3px 0 var(--jc-accent,transparent);
+  display:flex; flex-direction:column; background:var(--paper-deep);
+  box-shadow:0 1px 0 var(--paper-line), inset 0 -3px 0 var(--jc-accent,var(--sun));
 }
-.thought-tile .ttmedia{ position:relative; flex:0 0 68%; overflow:hidden; background:#100E0B; }
+.thought-tile .ttmedia{ position:relative; flex:0 0 68%; overflow:hidden; background:var(--paper-deep); }
 .thought-tile .tt-num{
   position:absolute; left:10px; bottom:10px; z-index:1;
   font-family:var(--serif); font-weight:700; font-size:12.5px; letter-spacing:0.03em;
   padding:5px 11px; border-radius:999px;
-  background:var(--jc-bg,#100E0B); color:var(--jc-ink,var(--paper-on-dark));
-  box-shadow:0 8px 20px rgba(0,0,0,0.35);
+  background:var(--jc-accent,var(--sun)); color:var(--paper);
+  box-shadow:0 8px 20px rgba(23,21,16,0.28);
 }
 .thought-tile .ttbody{
   flex:1; display:flex; align-items:center; justify-content:center;
   padding:clamp(18px,2.2vw,30px); text-align:center;
 }
 .thought-tile .tttitle{
-  font-family:var(--serif); font-weight:600; color:var(--paper-on-dark); line-height:1.22;
+  font-family:var(--serif); font-weight:600; color:var(--ink); line-height:1.22;
   font-size:clamp(18px,1.8vw,22px); letter-spacing:-0.01em;
 }
-.thought-tile:hover .tttitle, .thought-tile:focus-visible .tttitle{ color:var(--jc-accent,var(--candle)); }
+.thought-tile:hover .tttitle, .thought-tile:focus-visible .tttitle{ color:var(--jc-accent,var(--sun)); }
 
-/* ============ READING DIALOG — premium full-screen entry, coloured to match
-   whichever card opened it (applyPalette sets --jc-* on .thought-modal-card
-   in main.js) ============
+/* ============ READING DIALOG — premium full-screen entry, plain paper
+   background like the rest of the site (applyPalette still sets --jc-*
+   on .thought-modal-card in main.js, but every card now shares the same
+   one-entry palette, so this is no longer per-entry colour — just the
+   same plumbing kept in place in case that ever changes again) ============
    .thought-modal is only the fixed backdrop; .thought-modal-card is the
    ONE scroll container (overflow-y:auto) — the page behind it is locked via
    body.dialog-open. The "shrink and lock" title effect is built from TWO
@@ -628,7 +557,7 @@ body.touch .cursor-dot{ display:none; }
 .thought-modal-card{
   position:absolute; inset:clamp(0px,2.2vw,30px); margin:auto;
   width:100%; height:100%; max-width:920px;
-  background:var(--jc-bg,#171510); color:var(--jc-ink,#F1E9D8);
+  background:var(--jc-bg,var(--paper-deep)); color:var(--jc-ink,var(--ink));
   border-radius:clamp(0px,1.6vw,22px);
   overflow-y:auto; overflow-x:hidden; overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
   box-shadow:0 60px 140px rgba(0,0,0,0.55);
@@ -642,14 +571,14 @@ body.dialog-open{ overflow:hidden; }
   position:absolute; top:max(14px,env(safe-area-inset-top)); right:max(14px,env(safe-area-inset-right)); z-index:3;
   display:flex; align-items:center; gap:6px;
   padding:9px 15px 9px 17px; border-radius:999px;
-  background:color-mix(in srgb, var(--jc-ink,#F1E9D8) 15%, transparent);
-  color:var(--jc-ink,#F1E9D8);
+  background:color-mix(in srgb, var(--jc-ink,var(--ink)) 15%, transparent);
+  color:var(--jc-ink,var(--ink));
   font-family:var(--sans); font-size:11px; letter-spacing:0.09em; text-transform:uppercase; font-weight:700;
   -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
   transition:background .2s var(--ease);
 }
 .thought-modal-close span{ font-size:16px; line-height:1; }
-.thought-modal-close:hover{ background:color-mix(in srgb, var(--jc-ink,#F1E9D8) 26%, transparent); }
+.thought-modal-close:hover{ background:color-mix(in srgb, var(--jc-ink,var(--ink)) 26%, transparent); }
 
 /* -- hero: the big opening title, plain in-flow content, never resized -- */
 .thought-modal-hero{
@@ -660,22 +589,22 @@ body.dialog-open{ overflow:hidden; }
 }
 .thought-modal-meta{
   font-family:var(--sans); font-size:11px; letter-spacing:0.15em; text-transform:uppercase;
-  color:var(--jc-soft,var(--paper-on-dark-soft)); margin:0 0 14px; opacity:0.9;
+  color:var(--jc-soft,var(--ink-soft)); margin:0 0 14px; opacity:0.9;
 }
 .thought-modal-title{
-  font-family:var(--serif); font-weight:700; color:var(--jc-ink,#F1E9D8);
+  font-family:var(--serif); font-weight:700; color:var(--jc-ink,var(--ink));
   font-size:clamp(34px,6vw,62px); line-height:1.06; letter-spacing:-0.01em;
   max-width:17ch; margin:0 0 18px;
 }
 .thought-modal-subhead{
   font-family:var(--serif); font-style:italic; font-size:clamp(16px,2vw,20px); line-height:1.55;
-  color:var(--jc-soft,var(--paper-on-dark-soft)); max-width:58ch; margin:0;
+  color:var(--jc-soft,var(--ink-soft)); max-width:58ch; margin:0;
 }
 
 /* -- compact head: fixed-size sticky bar, crossfades in as the hero scrolls away -- */
 .thought-modal-head{
   position:sticky; top:0; z-index:2;
-  background:var(--jc-bg,#171510);
+  background:var(--jc-bg,var(--paper-deep));
   padding:16px clamp(24px,5.5vw,58px) 14px;
   opacity:var(--tm-compact-opacity,0);
   transform:translateY(var(--tm-compact-shift,10px));
@@ -683,10 +612,10 @@ body.dialog-open{ overflow:hidden; }
 }
 .thought-modal-head-meta{
   font-family:var(--sans); font-size:10px; letter-spacing:0.14em; text-transform:uppercase;
-  color:var(--jc-soft,var(--paper-on-dark-soft)); margin:0 0 4px; opacity:0.85;
+  color:var(--jc-soft,var(--ink-soft)); margin:0 0 4px; opacity:0.85;
 }
 .thought-modal-head-title{
-  font-family:var(--serif); font-weight:700; color:var(--jc-ink,#F1E9D8);
+  font-family:var(--serif); font-weight:700; color:var(--jc-ink,var(--ink));
   font-size:clamp(28px,2.6vw,36px); line-height:1.15; letter-spacing:-0.01em; margin:0;
   max-width:60ch; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
 }
@@ -695,20 +624,20 @@ body.dialog-open{ overflow:hidden; }
 }
 .thought-modal-bodylabel{
   font-family:var(--sans); font-size:11px; letter-spacing:0.15em; text-transform:uppercase;
-  color:var(--jc-soft,var(--paper-on-dark-soft)); margin:0 0 18px; opacity:0.85;
+  color:var(--jc-soft,var(--ink-soft)); margin:0 0 18px; opacity:0.85;
 }
-.thought-modal-expl{ font-family:var(--serif); font-size:17px; line-height:1.75; color:var(--jc-ink,#F1E9D8); }
+.thought-modal-expl{ font-family:var(--serif); font-size:17px; line-height:1.75; color:var(--jc-ink,var(--ink)); }
 .thought-modal-expl p{ margin:0 0 20px; opacity:0.94; }
 .thought-modal-expl p:last-child{ margin-bottom:0; }
 .thought-modal-expl h4{
-  font-family:var(--serif); font-weight:600; color:var(--jc-ink,#F1E9D8); font-size:19px;
+  font-family:var(--serif); font-weight:600; color:var(--jc-ink,var(--ink)); font-size:19px;
   margin:28px 0 12px;
 }
 .thought-modal-expl h4:first-child{ margin-top:0; }
 .thought-modal-expl .article-table-wrap{ overflow-x:auto; margin:18px 0 24px; }
 .thought-modal-expl table{ width:100%; border-collapse:collapse; font-family:var(--sans); font-size:12.5px; min-width:480px; }
-.thought-modal-expl th{ text-align:left; padding:8px 12px; border-bottom:2px solid color-mix(in srgb, var(--jc-ink,#F1E9D8) 30%, transparent); font-size:10px; letter-spacing:0.06em; text-transform:uppercase; color:var(--jc-soft,var(--muted-on-dark)); }
-.thought-modal-expl td{ padding:8px 12px; border-bottom:1px solid color-mix(in srgb, var(--jc-ink,#F1E9D8) 14%, transparent); color:var(--jc-ink,#F1E9D8); opacity:0.9; }
+.thought-modal-expl th{ text-align:left; padding:8px 12px; border-bottom:2px solid color-mix(in srgb, var(--jc-ink,var(--ink)) 30%, transparent); font-size:10px; letter-spacing:0.06em; text-transform:uppercase; color:var(--jc-soft,var(--muted)); }
+.thought-modal-expl td{ padding:8px 12px; border-bottom:1px solid color-mix(in srgb, var(--jc-ink,var(--ink)) 14%, transparent); color:var(--jc-ink,var(--ink)); opacity:0.9; }
 @media (max-width:760px){
   .thought-modal-card{ inset:0; border-radius:0; max-width:none; }
   .thought-modal-hero{ padding-left:20px; padding-right:20px; }

@@ -138,46 +138,36 @@
   }
   document.querySelectorAll('svg[data-orn]').forEach(buildAstrolabe);
 
-  /* ---------- hero: layered parallax — everything already in the hero,
-     just moving at different scroll-tied speeds ----------
-     No new section, no new image: the astrolabe rim, its turning rete,
-     the particle field and the title are the four layers, each getting
-     its own translateY rate as the reader scrolls through the hero, on
-     top of whatever else it was already doing (the rete keeps rotating,
-     the particles keep their own ambient rAF drift). Title moves least —
-     it's the thing meant to stay put and be read — the rim barely more,
-     the rete and the particle field the most, so they read as the
-     furthest-back, most atmospheric layer. This is scroll-tied motion,
-     same category as the Journal's image parallax below, so — like that
-     one — it's skipped entirely under Reduce Motion rather than forced;
-     the autonomous stuff (small ornaments' auto-spin, the particles' own
-     ambient drift) stays exempt from that setting, same as always. */
-  const heroAstro = document.querySelector('.hero-astro');
-  const heroRete = heroAstro && heroAstro.querySelector('.orn-rete');
-  const heroRim = heroAstro && heroAstro.querySelector('.orn-rim');
+  /* ---------- hero: layered parallax ----------
+     The hero background is now the desk sketch itself (the astrolabe
+     mandala that used to live here is gone). Three layers still move at
+     different scroll-tied speeds as the reader scrolls through the hero:
+     the drawing itself (slowest, with a faint zoom so it never shows a
+     hard edge), the ambient particle field on top of it, and the title,
+     which moves least since it's the thing meant to stay put and be read.
+     Scroll-tied motion, so — like the Journal's image parallax below —
+     it's skipped entirely under Reduce Motion rather than forced. */
+  const heroBgImg = document.querySelector('.hero-bg img');
   const heroInnerLayer = document.querySelector('.hero-inner');
   // hero-scene.js (the particle canvas) loads via its own <script> tag after
   // this one, so the canvas doesn't exist yet at this point — re-queried
   // lazily inside the scroll handler below until it shows up, rather than
   // captured once here and silently staying null forever.
   let heroParticleLayer = document.querySelector('.hero-scene');
-  if (heroAstro && heroRete) {
-    requestAnimationFrame(() => requestAnimationFrame(() => heroAstro.classList.add('is-in')));
+  if (heroBgImg) {
     const heroReduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (!heroReduceMotion) {
       const heroSection = document.querySelector('.hero');
-      const HERO_ROTATE_DEG = 150;
-      function onScrollHeroAstro(){
+      function onScrollHeroBg(){
         if (!heroParticleLayer) heroParticleLayer = document.querySelector('.hero-scene');
         const h = heroSection.offsetHeight || 1;
         const progress = Math.max(0, Math.min(1, window.scrollY / h));
-        heroRete.style.transform = `translateY(${progress * 75}px) rotate(${progress * HERO_ROTATE_DEG}deg)`;
-        if (heroRim) heroRim.style.transform = `translateY(${progress * 45}px)`;
+        heroBgImg.style.transform = `scale(1.08) translateY(${(progress * 40).toFixed(1)}px)`;
         if (heroParticleLayer) heroParticleLayer.style.transform = `translateY(${progress * 75}px)`;
         if (heroInnerLayer) heroInnerLayer.style.transform = `translateY(${progress * 20}px)`;
       }
-      window.addEventListener('scroll', onScrollHeroAstro, { passive:true });
-      onScrollHeroAstro();
+      window.addEventListener('scroll', onScrollHeroBg, { passive:true });
+      onScrollHeroBg();
     }
   }
 
@@ -250,42 +240,41 @@
 (function(){
   function esc(s){ const d=document.createElement('div'); d.textContent = s==null?'':String(s); return d.innerHTML; }
 
-  /* ---------------- Sketch-to-colour cover media ----------------
-     Shared by both places a Journal cover shows up (the homepage card and
-     the /thoughts.html archive tile): two stacked <img> filling the same
-     box, the sketch on the bottom always painted, the full-colour photo on
-     top starting invisible. initJournalColorReveal (below) adds .in-color
-     to the wrapper once a reader scrolls to that entry, which is the only
-     thing that crossfades the two — nothing here does the animating
-     itself. `t.sketch` is an optional field (set through /admin, or by
-     hand in content/thoughts/*.json) holding a real line-sketch version of
-     the same artwork; entries that don't have one yet fall back to the
-     colour photo itself with a desaturated/high-contrast CSS filter
-     (.jimg-sketch--approx) as an honest placeholder — never a broken
-     image — until a real sketch is uploaded. */
-  function sketchColorMedia(t, altText){
-    if (!t.image) return '';
-    const sketchSrc = t.sketch || t.image;
-    const approx = t.sketch ? '' : ' jimg-sketch--approx';
-    return `<img class="jimg jimg-sketch${approx}" src="${esc(sketchSrc)}" alt="" aria-hidden="true" loading="lazy" decoding="async"/>`
-      + `<img class="jimg jimg-color" src="${esc(t.image)}" alt="${esc(altText)}" loading="lazy" decoding="async"/>`;
+  /* ---------------- Journal cover media ----------------
+     Shared by every place a Journal cover shows up (homepage card,
+     /thoughts.html archive tile, and — through t.sketch alone — nowhere
+     else, since the reading dialog carries no image at all). The sketch
+     (`t.sketch`) is the permanent image now; there is no full-colour
+     photo anywhere on the site any more, and no crossfade between two
+     different pictures. The only "colour" is `t.sunVideo` — an optional
+     field, empty until the sketch-to-sun-video pass is uploaded — which,
+     when present, swaps the plain <img> for a <video> using that same
+     sketch as its poster (so it's pixel-identical to the sketch until it
+     plays) and scrubbed by scroll position via initSunVideoScrub below.
+     An entry with no sunVideo yet just shows its plain sketch, forever —
+     an honest, correct state to sit in while the videos are on their way,
+     never a broken image or a dead-end placeholder. */
+  function sketchMedia(t, altText){
+    const src = t.sketch || t.image; // t.image only as a last-resort fallback for any entry with neither
+    if (!src) return '';
+    if (t.sunVideo) {
+      return `<video class="jimg jvid-sun" muted playsinline preload="auto" poster="${esc(src)}" aria-label="${esc(altText)}">`
+        + `<source src="${esc(t.sunVideo)}" type="video/mp4" /></video>`;
+    }
+    return `<img class="jimg" src="${esc(src)}" alt="${esc(altText)}" loading="lazy" decoding="async"/>`;
   }
 
   /* ---------------- Journal colour system ----------------
-     Six intentional bright/dark pairings, always used in this order —
-     never assigned at random — so the sequence reads as a considered
-     design choice. Keyed by each entry's position in the published feed
-     (the order thoughts.json arrives in), which both the homepage Journal
-     and the /thoughts.html archive receive identically, so the same entry
-     always wears the same colours on either page, and the reading dialog
-     always inherits the palette of whichever card opened it. */
+     Used to be six bright/dark card pairings cycled by index — dropped in
+     favour of one plain paper card with a single warm accent, so the only
+     colour anywhere on the site is the sun-orange the sketch-to-colour
+     videos bloom into (see sketchColorMedia above). Kept as a one-entry
+     "palette" and applyPalette()/paletteAt() rather than inlining the
+     values, so every call site below — cards, tiles, the reading dialog,
+     the Journal's decorative motion layer — stays untouched and any of
+     them can still be re-varied later without a structural change. */
   const PALETTE = [
-    { bg:'#2451ff', ink:'#fff6e4', soft:'rgba(255,246,228,.8)', accent:'#ffd24d' }, // electric blue / warm cream
-    { bg:'#0b1b2e', ink:'#c6ff6b', soft:'rgba(198,255,107,.75)', accent:'#7cffc7' }, // deep navy / acid green
-    { bg:'#ff5a3c', ink:'#1b140f', soft:'rgba(27,20,15,.72)',    accent:'#7a2e17' }, // coral / charcoal
-    { bg:'#330f1c', ink:'#49e4d6', soft:'rgba(73,228,214,.75)',  accent:'#ff8fbe' }, // burgundy / turquoise
-    { bg:'#ffc53d', ink:'#171208', soft:'rgba(23,18,8,.72)',     accent:'#ff5b3c' }, // warm yellow / black
-    { bg:'#1a1740', ink:'#c6b6ff', soft:'rgba(198,182,255,.75)', accent:'#8f7bff' }, // lavender / midnight
+    { bg:'var(--paper-deep)', ink:'var(--ink)', soft:'var(--ink-soft)', accent:'var(--sun)' },
   ];
   function paletteAt(index){ return PALETTE[((index % PALETTE.length) + PALETTE.length) % PALETTE.length]; }
   function applyPalette(el, p){
@@ -452,7 +441,7 @@
     el.setAttribute('role', 'button');
     el.setAttribute('aria-label', `Open thought: ${t.title || ''}`);
     el.innerHTML = `
-      <div class="ttmedia">${sketchColorMedia(t, `Renaissance-style artwork accompanying the thought: ${t.title || ''}`)}<span class="tt-num" aria-hidden="true">${String(index + 1).padStart(2, '0')}</span></div>
+      <div class="ttmedia">${sketchMedia(t, `Pencil sketch accompanying the thought: ${t.title || ''}`)}<span class="tt-num" aria-hidden="true">${String(index + 1).padStart(2, '0')}</span></div>
       <div class="ttbody"><h3 class="tttitle">${esc(t.title)}</h3></div>
     `;
     el.addEventListener('click', () => openThoughtModal(t, index));
@@ -515,7 +504,7 @@
       entry.innerHTML = `
         <div class="wrap journal-grid">
           <div class="journal-media">
-            ${sketchColorMedia(t, `Renaissance-style artwork accompanying the thought: ${t.title || ''}`)}
+            ${sketchMedia(t, `Pencil sketch accompanying the thought: ${t.title || ''}`)}
             <span class="journal-num" aria-hidden="true">${String(i + 1).padStart(2, '0')}</span>
           </div>
           <div class="journal-copy">
@@ -553,33 +542,55 @@
     initJournalParallax(host);
     initJournalTilt(host);
     initJournalMotion();
-    initSketchColorReveal(host, '.journal-media');
+    initSunVideoScrub(host, '.journal-media');
   };
 
-  /* ---------------- Sketch-to-colour reveal ----------------
-     One-shot, same idiom as .reveal elsewhere: once a card's media box
-     crosses into view, its .jimg-color layer crossfades in over the sketch
-     underneath and stays there — this never reverts on scrolling back up,
-     matching "first a sketch, then it colours in once you reach it" rather
-     than a toggle. Reduced motion skips straight to coloured-in, same
-     policy as .reveal (a one-shot content transition, not ambient/parallax
-     motion, so it isn't the category Reduce Motion is meant to suppress
-     here) — nobody with that setting on should be stuck looking at line
-     art forever. */
-  function initSketchColorReveal(host, selector){
-    const medias = [...host.querySelectorAll(selector)];
-    if (!medias.length) return;
+  /* ---------------- Sun-video scroll scrub ----------------
+     For any entry that has a t.sunVideo (see sketchMedia above), this
+     scrubs that video's own currentTime directly off scroll position
+     instead of just playing it — "the image is sketch, but slowly turning
+     coloured as you scroll to it" is a position, not a timer, so the
+     video has to be driven the same way the Journal's other scroll
+     effects are (see initJournalTilt/initJournalParallax): read scroll,
+     write a value, rAF-throttled, never hijacking scroll itself. The
+     reveal window starts as the card's top crosses the bottom of the
+     viewport and finishes once the card is roughly centred — i.e. exactly
+     the span of scrolling TO this entry — then holds on the last frame
+     once arrived, same one-way "colours in and stays" behaviour as
+     before. Reduced motion jumps straight to the final, fully-bloomed
+     frame — a one-shot content state, not the ambient motion Reduce
+     Motion is meant to suppress. Entries with no sunVideo yet are plain
+     <img> tags, untouched by any of this. */
+  function initSunVideoScrub(host, selector){
+    const videos = [...host.querySelectorAll(`${selector} video.jvid-sun`)];
+    if (!videos.length) return;
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduceMotion || !('IntersectionObserver' in window)) {
-      medias.forEach(m => m.classList.add('in-color'));
+    if (reduceMotion) {
+      videos.forEach(v => {
+        const jump = () => { try { v.currentTime = v.duration || 0; } catch(e){} };
+        if (v.readyState >= 1) jump(); else v.addEventListener('loadedmetadata', jump, { once:true });
+      });
       return;
     }
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) { entry.target.classList.add('in-color'); io.unobserve(entry.target); }
+    let ticking = false;
+    function update(){
+      const vh = window.innerHeight;
+      videos.forEach(v => {
+        if (!v.duration || isNaN(v.duration)) return;
+        const rect = v.getBoundingClientRect();
+        if (rect.bottom < -200 || rect.top > vh + 200) return;
+        const start = vh;
+        const end = vh * 0.4;
+        const progress = clamp01((start - rect.top) / (start - end), 0, 1);
+        const target = progress * v.duration;
+        if (Math.abs(v.currentTime - target) > 0.03) v.currentTime = target;
       });
-    }, { threshold: 0.4, rootMargin: '0px 0px -8% 0px' });
-    medias.forEach(m => io.observe(m));
+      ticking = false;
+    }
+    window.addEventListener('scroll', () => {
+      if (!ticking) { requestAnimationFrame(update); ticking = true; }
+    }, { passive:true });
+    videos.forEach(v => { if (v.readyState >= 1) update(); else v.addEventListener('loadedmetadata', update, { once:true }); });
   }
 
   /* ---------------- Journal image parallax on scroll ----------------
@@ -618,26 +629,25 @@
     update();
   }
 
-  /* ---------------- Journal card depth — restrained scroll-tied tilt ----------------
-     Applied to .journal-grid (a plain, unclaimed child), never to
-     .journal-entry itself, which already owns the one-shot .reveal
-     fade/rise — setting an inline transform on the same element would
-     silently fight and win over that CSS-driven entrance. Small values on
-     purpose: this reads as "the stack has depth", not a gimmick. */
-  /* ---------------- Journal page-turn ----------------
-     Each entry is its own "page": a gentle centred tilt while it's the
-     one being read (the old initJournalTilt behaviour, kept as-is), which
-     then ramps into a real page-turn as the entry's top edge rises past
-     roughly the middle of the viewport — hinging at its own top edge
-     (transform-origin, matched to the .jc-accent-tinted top-corner fold
-     on the card itself) and rotating away into the screen, fading as it
-     goes edge-on, exactly like a page being turned over and past. Nothing
+  /* ---------------- Journal page-turn — right to left, like a real book ----------------
+     Each entry is its own page, hinged on its own LEFT edge
+     (transform-origin) the way a page bound on the left actually turns:
+     a gentle rotateY wobble around that same hinge while it's the one
+     being read, ramping into a full turn only once the entry's top edge
+     rises close to the very top of the viewport — i.e. once it's actually
+     on its way out, not while it's still the page in front of the reader
+     — the right edge sweeping back and to the left as it rotates past
+     90°, fading as it goes edge-on, exactly like turning a physical page
+     over and past. Nothing
      here touches document flow or scroll position — it's a pure transform/
      opacity overlay on top of ordinary scrolling (see the long comment on
      .journal-motion above for why that matters: a sticky/layout-affecting
      version of this is what caused the reading-dialog feedback-loop bug
-     this site already had to fix once). Reduce Motion drops it back to
-     the plain, still cards — same policy as the rest of this section. */
+     this site already had to fix once). .journal-grid has
+     backface-visibility:hidden (renaissance.css) so past 90° it simply
+     disappears rather than showing a mirrored back face. Reduce Motion
+     drops it back to the plain, still cards — same policy as the rest of
+     this section. */
   function initJournalTilt(host){
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduceMotion) return;
@@ -653,24 +663,30 @@
         const centered = (vh / 2 - center) / (vh / 2 + rect.height / 2);
         const clamped = Math.max(-1, Math.min(1, centered));
         const gentleScale = 1 - Math.abs(clamped) * 0.035;
-        const gentleTilt = clamped * -2.2;
+        const gentleTilt = clamped * -1.6;
 
         // Turn phase: 0 while the entry is still comfortably on screen,
         // ramping to 1 as its top edge climbs from mid-viewport up past
         // the top — i.e. exactly the window where a reader's eye is
-        // leaving this entry for the next one below it.
-        const turnStart = vh * 0.56;
-        const turnEnd = -rect.height * 0.18;
+        // leaving this entry for the next one below it. Deliberately close
+        // to the top edge (not mid-viewport) so a card sits flat and fully
+        // readable for as long as it's genuinely the one in front of the
+        // reader, and only starts turning once it's actually on its way
+        // out — verified against a real scroll trace: at vh*0.56 the turn
+        // was already ~25% done the moment a card first scrolled into
+        // view, which read as premature.
+        const turnStart = vh * 0.2;
+        const turnEnd = -rect.height * 0.12;
         const turnRaw = clamp01((turnStart - rect.top) / (turnStart - turnEnd), 0, 1);
         const turn = turnRaw * turnRaw * (3 - 2 * turnRaw); // smoothstep
 
-        const tilt = gentleTilt + turn * 82;
+        const tilt = gentleTilt + turn * 96; // past 90deg — backface-hidden lets it vanish cleanly
         const scale = gentleScale - turn * 0.05;
-        const lift = turn * -22;
+        const shiftX = turn * -32; // the turning edge sweeps left as it goes, matching the hinge side
         const fade = 1 - turn * 0.94;
 
-        grid.style.transformOrigin = 'top center';
-        grid.style.transform = `perspective(1500px) rotateX(${tilt.toFixed(2)}deg) translateY(${lift.toFixed(1)}px) scale(${scale.toFixed(3)})`;
+        grid.style.transformOrigin = 'left center';
+        grid.style.transform = `perspective(1500px) rotateY(${tilt.toFixed(2)}deg) translateX(${shiftX.toFixed(1)}px) scale(${scale.toFixed(3)})`;
         grid.style.opacity = fade.toFixed(3);
       });
       ticking = false;
@@ -729,8 +745,8 @@
 
     const rings = [
       { cx:14, cy:22, r:9,  i:0, depth:.5, cls:'jm-ring jm-spin-a' },
-      { cx:88, cy:16, r:6,  i:3, depth:.8, cls:'jm-ring jm-spin-b' },
-      { cx:92, cy:70, r:11, i:1, depth:.35, cls:'jm-ring jm-spin-a' },
+      { cx:88, cy:16, r:6,  i:0, depth:.8, cls:'jm-ring jm-spin-b' },
+      { cx:92, cy:70, r:11, i:0, depth:.35, cls:'jm-ring jm-spin-a' },
     ];
     rings.forEach(r => {
       layer.appendChild(el('circle', {
@@ -741,13 +757,13 @@
     });
 
     if (!isTouch) {
-      const extraRing = el('circle', { class:'jm-ring jm-spin-b', cx:6, cy:82, r:5, fill:'none', stroke:`url(#jm-grad-4)`, 'stroke-width':.4, 'data-depth':.9 });
+      const extraRing = el('circle', { class:'jm-ring jm-spin-b', cx:6, cy:82, r:5, fill:'none', stroke:`url(#jm-grad-0)`, 'stroke-width':.4, 'data-depth':.9 });
       layer.appendChild(extraRing);
     }
 
     const prisms = [
-      { x:80, y:38, s:7, i:2, depth:.65, cls:'jm-prism jm-drift-a' },
-      { x:20, y:78, s:5, i:5, depth:.45, cls:'jm-prism jm-drift-b' },
+      { x:80, y:38, s:7, i:0, depth:.65, cls:'jm-prism jm-drift-a' },
+      { x:20, y:78, s:5, i:0, depth:.45, cls:'jm-prism jm-drift-b' },
     ];
     prisms.forEach(p => {
       const rect = el('rect', {
@@ -824,7 +840,7 @@
     if (!host || !thoughts || !thoughts.length) return;
     host.innerHTML = '';
     thoughts.forEach((t, i) => host.appendChild(buildTile(t, i)));
-    initSketchColorReveal(host, '.ttmedia');
+    initSunVideoScrub(host, '.ttmedia');
   };
 
   /* ---------------- THE SHELF — simple CSS marquee ----------------
