@@ -621,6 +621,12 @@ body.dialog-open{ overflow:hidden; }
   .thought-modal-title{ max-width:none; font-size:clamp(28px,9vw,44px); }
   .thought-modal-head-title{ font-size:clamp(22px,6vw,28px); }
   .thought-modal-expl table{ min-width:420px; }
+  /* The actual reading text — bumped up a full size on phone, where the
+     17px desktop default reads small for a long-form note. */
+  .thought-modal-subhead{ font-size:18px; }
+  .thought-modal-bodylabel{ font-size:12px; }
+  .thought-modal-expl{ font-size:19px; line-height:1.7; }
+  .thought-modal-expl h4{ font-size:21px; }
 }
 
 /* ============ THOUGHTS ARCHIVE — the same six tiles, laid out to browse ============ */
