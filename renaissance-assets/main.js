@@ -250,6 +250,27 @@
 (function(){
   function esc(s){ const d=document.createElement('div'); d.textContent = s==null?'':String(s); return d.innerHTML; }
 
+  /* ---------------- Sketch-to-colour cover media ----------------
+     Shared by both places a Journal cover shows up (the homepage card and
+     the /thoughts.html archive tile): two stacked <img> filling the same
+     box, the sketch on the bottom always painted, the full-colour photo on
+     top starting invisible. initJournalColorReveal (below) adds .in-color
+     to the wrapper once a reader scrolls to that entry, which is the only
+     thing that crossfades the two — nothing here does the animating
+     itself. `t.sketch` is an optional field (set through /admin, or by
+     hand in content/thoughts/*.json) holding a real line-sketch version of
+     the same artwork; entries that don't have one yet fall back to the
+     colour photo itself with a desaturated/high-contrast CSS filter
+     (.jimg-sketch--approx) as an honest placeholder — never a broken
+     image — until a real sketch is uploaded. */
+  function sketchColorMedia(t, altText){
+    if (!t.image) return '';
+    const sketchSrc = t.sketch || t.image;
+    const approx = t.sketch ? '' : ' jimg-sketch--approx';
+    return `<img class="jimg jimg-sketch${approx}" src="${esc(sketchSrc)}" alt="" aria-hidden="true" loading="lazy" decoding="async"/>`
+      + `<img class="jimg jimg-color" src="${esc(t.image)}" alt="${esc(altText)}" loading="lazy" decoding="async"/>`;
+  }
+
   /* ---------------- Journal colour system ----------------
      Six intentional bright/dark pairings, always used in this order —
      never assigned at random — so the sequence reads as a considered
@@ -431,7 +452,7 @@
     el.setAttribute('role', 'button');
     el.setAttribute('aria-label', `Open thought: ${t.title || ''}`);
     el.innerHTML = `
-      <div class="ttmedia">${t.image ? `<img class="ttimg" src="${esc(t.image)}" alt="Renaissance-style artwork accompanying the thought: ${esc(t.title)}" loading="lazy" decoding="async"/>` : ''}<span class="tt-num" aria-hidden="true">${String(index + 1).padStart(2, '0')}</span></div>
+      <div class="ttmedia">${sketchColorMedia(t, `Renaissance-style artwork accompanying the thought: ${t.title || ''}`)}<span class="tt-num" aria-hidden="true">${String(index + 1).padStart(2, '0')}</span></div>
       <div class="ttbody"><h3 class="tttitle">${esc(t.title)}</h3></div>
     `;
     el.addEventListener('click', () => openThoughtModal(t, index));
@@ -494,7 +515,7 @@
       entry.innerHTML = `
         <div class="wrap journal-grid">
           <div class="journal-media">
-            ${t.image ? `<img src="${esc(t.image)}" alt="Renaissance-style artwork accompanying the thought: ${esc(t.title)}" loading="lazy" decoding="async"/>` : ''}
+            ${sketchColorMedia(t, `Renaissance-style artwork accompanying the thought: ${t.title || ''}`)}
             <span class="journal-num" aria-hidden="true">${String(i + 1).padStart(2, '0')}</span>
           </div>
           <div class="journal-copy">
@@ -532,7 +553,34 @@
     initJournalParallax(host);
     initJournalTilt(host);
     initJournalMotion();
+    initSketchColorReveal(host, '.journal-media');
   };
+
+  /* ---------------- Sketch-to-colour reveal ----------------
+     One-shot, same idiom as .reveal elsewhere: once a card's media box
+     crosses into view, its .jimg-color layer crossfades in over the sketch
+     underneath and stays there — this never reverts on scrolling back up,
+     matching "first a sketch, then it colours in once you reach it" rather
+     than a toggle. Reduced motion skips straight to coloured-in, same
+     policy as .reveal (a one-shot content transition, not ambient/parallax
+     motion, so it isn't the category Reduce Motion is meant to suppress
+     here) — nobody with that setting on should be stuck looking at line
+     art forever. */
+  function initSketchColorReveal(host, selector){
+    const medias = [...host.querySelectorAll(selector)];
+    if (!medias.length) return;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion || !('IntersectionObserver' in window)) {
+      medias.forEach(m => m.classList.add('in-color'));
+      return;
+    }
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) { entry.target.classList.add('in-color'); io.unobserve(entry.target); }
+      });
+    }, { threshold: 0.4, rootMargin: '0px 0px -8% 0px' });
+    medias.forEach(m => io.observe(m));
+  }
 
   /* ---------------- Journal image parallax on scroll ----------------
      Adapted from a scroll-driven image-grid technique: rather than pinning
@@ -576,6 +624,20 @@
      fade/rise — setting an inline transform on the same element would
      silently fight and win over that CSS-driven entrance. Small values on
      purpose: this reads as "the stack has depth", not a gimmick. */
+  /* ---------------- Journal page-turn ----------------
+     Each entry is its own "page": a gentle centred tilt while it's the
+     one being read (the old initJournalTilt behaviour, kept as-is), which
+     then ramps into a real page-turn as the entry's top edge rises past
+     roughly the middle of the viewport — hinging at its own top edge
+     (transform-origin, matched to the .jc-accent-tinted top-corner fold
+     on the card itself) and rotating away into the screen, fading as it
+     goes edge-on, exactly like a page being turned over and past. Nothing
+     here touches document flow or scroll position — it's a pure transform/
+     opacity overlay on top of ordinary scrolling (see the long comment on
+     .journal-motion above for why that matters: a sticky/layout-affecting
+     version of this is what caused the reading-dialog feedback-loop bug
+     this site already had to fix once). Reduce Motion drops it back to
+     the plain, still cards — same policy as the rest of this section. */
   function initJournalTilt(host){
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduceMotion) return;
@@ -588,11 +650,28 @@
         const rect = grid.getBoundingClientRect();
         if (rect.bottom < -200 || rect.top > vh + 200) return;
         const center = rect.top + rect.height / 2;
-        const progress = (vh / 2 - center) / (vh / 2 + rect.height / 2);
-        const clamped = Math.max(-1, Math.min(1, progress));
-        const scale = 1 - Math.abs(clamped) * 0.035;
-        const tilt = clamped * -2.2;
-        grid.style.transform = `perspective(1400px) rotateX(${tilt.toFixed(2)}deg) scale(${scale.toFixed(3)})`;
+        const centered = (vh / 2 - center) / (vh / 2 + rect.height / 2);
+        const clamped = Math.max(-1, Math.min(1, centered));
+        const gentleScale = 1 - Math.abs(clamped) * 0.035;
+        const gentleTilt = clamped * -2.2;
+
+        // Turn phase: 0 while the entry is still comfortably on screen,
+        // ramping to 1 as its top edge climbs from mid-viewport up past
+        // the top — i.e. exactly the window where a reader's eye is
+        // leaving this entry for the next one below it.
+        const turnStart = vh * 0.56;
+        const turnEnd = -rect.height * 0.18;
+        const turnRaw = clamp01((turnStart - rect.top) / (turnStart - turnEnd), 0, 1);
+        const turn = turnRaw * turnRaw * (3 - 2 * turnRaw); // smoothstep
+
+        const tilt = gentleTilt + turn * 82;
+        const scale = gentleScale - turn * 0.05;
+        const lift = turn * -22;
+        const fade = 1 - turn * 0.94;
+
+        grid.style.transformOrigin = 'top center';
+        grid.style.transform = `perspective(1500px) rotateX(${tilt.toFixed(2)}deg) translateY(${lift.toFixed(1)}px) scale(${scale.toFixed(3)})`;
+        grid.style.opacity = fade.toFixed(3);
       });
       ticking = false;
     }
@@ -745,6 +824,7 @@
     if (!host || !thoughts || !thoughts.length) return;
     host.innerHTML = '';
     thoughts.forEach((t, i) => host.appendChild(buildTile(t, i)));
+    initSketchColorReveal(host, '.ttmedia');
   };
 
   /* ---------------- THE SHELF — simple CSS marquee ----------------

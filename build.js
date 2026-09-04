@@ -326,7 +326,15 @@ function buildThoughts() {
   const index = entries.map(t => ({
     id: t.id || t.title, title: t.title || '', explanation: t.explanation || '',
     explanationHtml: renderThoughtBody(t.explanation),
-    image: t.image || '', createdAt: t.createdAt, updatedAt: t.updatedAt,
+    image: t.image || '',
+    // Optional: a clean line-sketch version of the same artwork, shown
+    // first — the Journal card crossfades to the full-colour `image`
+    // above once the reader scrolls to that entry. Blank until an actual
+    // sketch is uploaded through /admin; the frontend falls back to an
+    // approximated look on `image` itself when this is empty, so nothing
+    // breaks for entries that don't have one yet.
+    sketch: t.sketch || '',
+    createdAt: t.createdAt, updatedAt: t.updatedAt,
   }));
   fs.writeFileSync(path.join(GEN, 'thoughts.json'), JSON.stringify(index, null, 2), 'utf8');
   console.log(`thoughts: ${entries.length} published, index written to renaissance-assets/generated/thoughts.json`);
