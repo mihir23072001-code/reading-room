@@ -241,16 +241,12 @@
   /* ---------------- Journal cover media ----------------
      Shared by every place a Journal cover shows up (homepage card,
      /thoughts.html archive tile, and — through t.sketch alone — nowhere
-     else, since the reading dialog carries no image at all). The sketch
-     (`t.sketch`) is the only image, always, everywhere — one plain <img>,
-     no video, no crossfade, no scroll-scrubbing. Simple and static was the
-     explicit brief. */
+     else, since the reading dialog carries no image at all). `t.sketch`
+     is the field name in the data (and in the CMS), but it now holds the
+     full-colour cover artwork, not a pencil sketch — one plain <img>, no
+     video, no crossfade, no scroll-scrubbing, same as before; only which
+     picture it points to changed. */
   function sketchMedia(t, altText){
-    // Plain, static sketch image — no motion of any kind. A sunVideo may
-    // still be attached to an entry's data (from an earlier version of
-    // this feature), but it's never rendered here any more: simple and
-    // still was the explicit brief this replaced a scroll-scrubbed
-    // sketch-to-colour video with.
     const src = t.sketch || t.image; // t.image only as a last-resort fallback for any entry with neither
     if (!src) return '';
     return `<img class="jimg" src="${esc(src)}" alt="${esc(altText)}" loading="lazy" decoding="async"/>`;
@@ -433,7 +429,7 @@
     el.setAttribute('role', 'button');
     el.setAttribute('aria-label', `Open thought: ${t.title || ''}`);
     el.innerHTML = `
-      <div class="ttmedia">${sketchMedia(t, `Pencil sketch accompanying the thought: ${t.title || ''}`)}<span class="tt-num" aria-hidden="true">${String(index + 1).padStart(2, '0')}</span></div>
+      <div class="ttmedia">${sketchMedia(t, `Cover artwork accompanying the thought: ${t.title || ''}`)}<span class="tt-num" aria-hidden="true">${String(index + 1).padStart(2, '0')}</span></div>
       <div class="ttbody"><h3 class="tttitle">${esc(t.title)}</h3></div>
     `;
     el.addEventListener('click', () => openThoughtModal(t, index));
@@ -500,7 +496,7 @@
       entry.innerHTML = `
         <div class="wrap journal-grid">
           <div class="journal-media">
-            ${sketchMedia(t, `Pencil sketch accompanying the thought: ${t.title || ''}`)}
+            ${sketchMedia(t, `Cover artwork accompanying the thought: ${t.title || ''}`)}
             <span class="journal-num" aria-hidden="true">${String(i + 1).padStart(2, '0')}</span>
           </div>
           <div class="journal-copy">
