@@ -180,6 +180,9 @@ function pageShell({ title, description, heroImg, heroAlt, eyebrow, heading, des
 <body>
 <div class="grain"></div>
 <svg class="orn-fly" viewBox="0 0 200 200" aria-hidden="true" focusable="false" data-orn></svg>
+<svg class="orn-fly fly-b orn-b" viewBox="0 0 200 200" aria-hidden="true" focusable="false" data-orn></svg>
+<svg class="orn-fly fly-c orn-c" viewBox="0 0 200 200" aria-hidden="true" focusable="false" data-orn></svg>
+<svg class="orn-fly fly-d" viewBox="0 0 200 200" aria-hidden="true" focusable="false" data-orn></svg>
 <div class="progress-line" id="progressLine"></div>
 
 <nav class="nav">

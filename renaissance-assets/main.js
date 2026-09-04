@@ -144,12 +144,30 @@
   }
   document.querySelectorAll('svg[data-orn]').forEach(buildAstrolabe);
 
-  /* ---------- hero ----------
-     Static: the desk sketch as background, the astrolabe ornament
-     (.orn-hero, see the ornament system below) floating over it, the
-     title sitting still on top. No scroll-tied movement here any more —
-     simple was the explicit brief this replaced a layered parallax
-     version with. */
+  /* ---------- hero mandala — rotates with scroll ----------
+     One explicit, deliberate exception to "no scroll-tied motion":
+     the compass/astrolabe behind the hero title turns as the reader
+     scrolls, rather than sitting still or drifting on its own. Reactive
+     to input, so — unlike the ambient .orn-float/.orn-fly ornaments —
+     it's gated behind prefers-reduced-motion the normal way; under
+     Reduce Motion it simply sits at its resting angle. requestAnimationFrame-
+     throttled so it never fires more than once per frame. */
+  const heroMandala = document.querySelector('.hero-mandala');
+  const heroReduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (heroMandala && !heroReduceMotion) {
+    let heroTicking = false;
+    function onScrollHeroMandala(){
+      if (heroTicking) return;
+      heroTicking = true;
+      requestAnimationFrame(() => {
+        const deg = window.scrollY * 0.12;
+        heroMandala.style.transform = `translate(-50%,-50%) rotate(${deg}deg)`;
+        heroTicking = false;
+      });
+    }
+    window.addEventListener('scroll', onScrollHeroMandala, { passive:true });
+    onScrollHeroMandala();
+  }
 
   /* ---------- reveal on scroll — one-shot fade/rise, IntersectionObserver only ---------- */
   const revealEls = document.querySelectorAll('.reveal');
@@ -486,7 +504,7 @@
             <span class="journal-num" aria-hidden="true">${String(i + 1).padStart(2, '0')}</span>
           </div>
           <div class="journal-copy">
-            <span class="journal-meta"><span class="jd">${esc(formatDate(t.createdAt))}</span><span class="jopen-badge">Open ↗</span></span>
+            <span class="journal-meta"><span class="jd">${esc(formatDate(t.createdAt))}</span></span>
             <h3 class="jtitle">${esc(t.title)}</h3>
             ${hasExpl ? `<p class="jprev">${esc(previewOf(t.explanation))}</p>` : ''}
             <span class="jread" role="button" tabindex="0" aria-label="Open thought: ${esc(t.title)}">Open the full note <span class="arrow">→</span></span>
