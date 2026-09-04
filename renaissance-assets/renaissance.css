@@ -380,7 +380,7 @@ body.touch .cursor-dot{ display:none; }
 @media (max-width:900px){
   .hero{
     align-items:flex-start;
-    min-height:132svh; min-height:132dvh;
+    min-height:112svh; min-height:112dvh;
   }
   /* z-index (not position) is enough here — .hero-grid is a flex item of
      .hero, so it stacks above the negative-z-index background layers
@@ -401,19 +401,25 @@ body.touch .cursor-dot{ display:none; }
   .hero-right{
     position:absolute; inset:0; z-index:-2; margin:0; max-width:none; pointer-events:none;
   }
+  /* Faded down noticeably overall — a quiet backdrop, not a bold, dense
+     illustration competing for attention on a small screen. Shown whole,
+     never cropped: object-fit:contain keeps the full doorway-to-floor
+     scene intact (no clipped top or clipped feet), anchored toward the
+     bottom of the tall hero so the figure sits low, near the Journal
+     transition, same as the reference. */
   .hero-portal{ width:100%; height:100%; }
-  .hero-portal img{ width:100%; height:100%; object-fit:cover; object-position:center 14%; }
+  .hero-portal img{ width:100%; height:100%; object-fit:contain; object-position:center 100%; opacity:0.55; }
 
-  /* soft parchment wash, only over the top ~2/3 where the headline sits —
-     fades to fully clear by where the figure/doorway carry on alone. */
+  /* soft parchment wash, strongest where the headline sits — fades out
+     by where the figure/doorway carry on alone with no text over them. */
   .hero-veil{
     display:block; position:absolute; inset:0; z-index:-1; pointer-events:none;
     background:linear-gradient(180deg,
-      rgba(244,239,226,0.72) 0%,
-      rgba(244,239,226,0.66) 30%,
-      rgba(244,239,226,0.54) 44%,
-      rgba(244,239,226,0.24) 55%,
-      rgba(244,239,226,0) 65%);
+      rgba(244,239,226,0.86) 0%,
+      rgba(244,239,226,0.8) 30%,
+      rgba(244,239,226,0.7) 44%,
+      rgba(244,239,226,0.34) 55%,
+      rgba(244,239,226,0) 66%);
   }
 }
 
