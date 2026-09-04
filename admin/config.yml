@@ -48,8 +48,9 @@ collections:
     fields:
       - { label: "Title", name: "title", widget: "string", hint: "The thought, question or observation itself." }
       - { label: "Description", name: "explanation", widget: "text", required: true, hint: "The full text, shown in the pop-up when someone opens this entry. Blank line = new paragraph. \"## Heading\" for a sub-heading. A markdown table (| col | col |) renders as a data table." }
-      - { label: "Image", name: "image", widget: "image", required: true, hint: "One image for this thought's tile." }
-      - { label: "Sketch image", name: "sketch", widget: "image", required: false, hint: "Optional — a plain line-sketch version of the image above. When set, the Journal card shows this first and crossfades to the full-colour image once a reader scrolls to this entry. Leave blank to skip the effect." }
+      - { label: "Image (not shown on site)", name: "image", widget: "image", required: false, hint: "Legacy field, kept for reference only — no longer displayed anywhere on the site. Use Sketch image below instead." }
+      - { label: "Sketch image", name: "sketch", widget: "image", required: true, hint: "The pencil-sketch artwork for this thought's tile — this is the only image shown, on the homepage and the archive." }
+      - { label: "Sun video", name: "sunVideo", widget: "file", required: false, hint: "Optional — a short video that scrubs the sketch above from plain pencil into the sun-orange accent colour as a reader scrolls to this entry. Leave blank to just show the static sketch." }
       - { label: "Date", name: "date", widget: "datetime", format: "YYYY-MM-DD", date_format: "YYYY-MM-DD", time_format: false, required: false, hint: "Optional — controls where this entry sits in the Journal (newest first). Leave blank to default to when this was first published." }
       - { label: "Published", name: "published", widget: "boolean", default: true }
 

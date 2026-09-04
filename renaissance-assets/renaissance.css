@@ -306,11 +306,52 @@ body.touch .cursor-dot{ display:none; }
    high-contrast plate against it. Rendered straight from thoughts.json — a
    new /admin entry just becomes the next card, cycling to the next colour
    in the sequence. */
-.journal-sec{ background:transparent; position:relative; overflow:hidden; }
+/* .journal-sec is NOT overflow:hidden — #journalStack below holds a
+   position:sticky frame in pin mode, and position:sticky stops working on
+   any element with an overflow:hidden/auto/scroll ancestor between it and
+   the page's own scroll container. The decorative-shape clipping that used
+   to live here now lives on .journal-intro instead, which is short (normal
+   document flow, sized to the headline block only) and never sits between
+   the sticky frame and the page. */
+.journal-sec{ background:transparent; position:relative; }
+.journal-intro{ position:relative; overflow:hidden; }
 .journal-head{ position:relative; z-index:1; padding:clamp(70px,10vw,120px) 0 clamp(36px,5vw,54px); max-width:760px; }
 .journal-head h2{ font-size:clamp(30px,4vw,48px); margin-bottom:16px; color:var(--ink); }
 .journal-title{ font-size:clamp(48px,9vw,96px); font-weight:600; letter-spacing:-0.01em; }
 .journal-sub{ font-family:var(--serif); font-style:italic; font-size:17px; color:var(--ink-soft); line-height:1.55; max-width:520px; }
+
+/* ============ Journal page-turn stack ============
+   #journalStack (.journal-stack) is a scroll spacer: main.js sizes its
+   height to thoughts.length × one segment's worth of scroll — see
+   initJournalPageTurn. In pin mode (.journal-stack--pin, desktop widths
+   and motion allowed — decided once in renderJournal) its child
+   #journalList (.journal-stack-frame) is position:sticky, holding itself
+   at the top of the viewport for that entire spacer height. Every entry
+   is absolutely stacked in that same fixed rectangle (index 0 on top,
+   via z-index main.js sets per entry), so turning one away reveals the
+   next sitting exactly where it always was — a real book-stack, not a
+   card sliding past in a list. In flow mode (.journal-stack--flow —
+   mobile, under the same 700px breakpoint the two-column layout already
+   uses, or prefers-reduced-motion: reduce) nothing here is pinned at
+   all: entries render in plain, full-height document flow, no turn — a
+   phone doesn't have the vertical room to safely pin a whole card in
+   place, and Reduce Motion should never scroll-jack. */
+.journal-stack{ position:relative; z-index:1; }
+.journal-stack-frame{ position:relative; }
+
+.journal-stack--pin .journal-stack-frame{
+  position:sticky; top:0;
+  height:100vh; height:100svh;
+  overflow:hidden;
+}
+.journal-stack--pin .journal-entry{
+  position:absolute; inset:0;
+  display:flex; align-items:center;
+  padding:0;
+  visibility:hidden; /* main.js flips the active entry to visible each frame — see initJournalPageTurn */
+}
+.journal-stack--pin .journal-grid{ width:100%; max-height:88vh; max-height:88svh; }
+.journal-stack--pin .jprev{ display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; }
 
 .journal-entry{
   padding:clamp(16px,2.6vw,30px) 0;
@@ -324,7 +365,7 @@ body.touch .cursor-dot{ display:none; }
   background:var(--jc-bg,var(--paper-deep)); color:var(--jc-ink,var(--ink));
   box-shadow:0 26px 60px -18px rgba(23,21,16,0.28), 0 1px 0 var(--paper-line) inset;
   overflow:hidden;
-  backface-visibility:hidden; /* past 90deg mid-turn (initJournalTilt in main.js), vanish cleanly instead of showing a mirrored back face */
+  backface-visibility:hidden; /* past 90deg mid-turn (initJournalPageTurn in main.js), vanish cleanly instead of showing a mirrored back face */
   will-change:transform;
 }
 .journal-grid::after{
@@ -341,10 +382,11 @@ body.touch .cursor-dot{ display:none; }
 /* ============ Journal cover media ============
    A single sketch — <img> for entries with no sun-video yet, or a
    <video class="jvid-sun"> once one exists, scrubbed by scroll position
-   (initSunVideoScrub in main.js) rather than autoplaying. Either way it's
-   the one element filling this box, positioned to match the parallax
-   transform (initJournalParallax) and the page-turn transform
-   (initJournalTilt) already applied elsewhere on the card. */
+   (initSunVideoScrub in flow mode, initJournalPageTurn's own scrub in pin
+   mode — both in main.js) rather than autoplaying. Either way it's the
+   one element filling this box, positioned to match the parallax
+   transform (initJournalParallax, flow mode) and the page-turn transform
+   (initJournalPageTurn, pin mode) already applied elsewhere on the card. */
 .jimg{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; will-change:transform; }
 .journal-num{
   position:absolute; left:14px; bottom:14px; z-index:1;
@@ -386,6 +428,22 @@ body.touch .cursor-dot{ display:none; }
   .journal-entry:nth-child(even) .journal-grid{ grid-template-columns:1fr 0.86fr; }
   .journal-entry:nth-child(even) .journal-media{ order:2; }
   .journal-entry:nth-child(even) .journal-copy{ order:1; }
+
+  /* Pin mode only ever runs at this width and up (see the 700px check in
+     renderJournal) — the card has to fit inside a fixed 100vh/100svh
+     frame instead of taking whatever height it needs in normal flow, so
+     the image gets a capped height instead of an aspect-ratio (which
+     could otherwise demand more room than the frame has) and the title/
+     preview sizes come down a notch. */
+  .journal-stack--pin .journal-media{ aspect-ratio:auto; height:min(56vh,56svh,520px); }
+  .journal-stack--pin .journal-grid{ padding:clamp(20px,3vw,40px) clamp(20px,3.4vw,46px); gap:clamp(24px,4vw,50px); }
+  .journal-stack--pin .jtitle{ font-size:clamp(24px,3.2vw,44px); }
+}
+@media (min-width:700px) and (max-height:800px){
+  /* Shorter laptop screens — pull the frame content in further still. */
+  .journal-stack--pin .journal-media{ height:min(44vh,44svh,360px); }
+  .journal-stack--pin .jtitle{ font-size:clamp(22px,2.8vw,32px); }
+  .journal-stack--pin .jprev{ -webkit-line-clamp:3; }
 }
 @media (max-width:480px){
   .journal-grid{ padding:22px 18px; border-radius:14px; }
@@ -409,7 +467,12 @@ body.touch .cursor-dot{ display:none; }
 .journal-motion{
   position:absolute; inset:0; z-index:0; pointer-events:none; overflow:visible;
 }
-#journalList{ position:relative; z-index:1; }
+/* No #journalList z-index rule here any more: .journal-motion now lives
+   inside .journal-intro (see initJournalMotion in main.js), not as a
+   sibling of #journalList/.journal-stack-frame, so they're no longer in
+   the same stacking context — and an ID selector here would outrank
+   .journal-stack--pin .journal-stack-frame's position:sticky (an ID
+   always beats a two-class selector), breaking the page-turn pin. */
 .jm-ring, .jm-prism, .jm-numeral, .jm-particle{
   transform-box:fill-box; transform-origin:50% 50%;
   translate:var(--jm-pointer-x,0px) calc(var(--jm-scroll-y,0px) + var(--jm-pointer-y,0px));

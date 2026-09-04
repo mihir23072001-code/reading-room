@@ -1,10 +1,20 @@
 /* THE READING ROOM — shared front-end behaviour.
-   Mobile-first, no scroll-jacking: every animation here is either a plain
-   CSS transition/keyframe, or a one-shot IntersectionObserver reveal. There
-   is no pinned scroll, no horizontal scroll-hijacking and no external
-   animation library — this file has zero dependencies and works the same
-   on a phone as it does on a desktop. Respects prefers-reduced-motion
-   throughout (see the sitewide override at the bottom of renaissance.css). */
+   Mobile-first, no scroll-jacking: almost every animation here is either a
+   plain CSS transition/keyframe, or a one-shot IntersectionObserver reveal.
+   No external animation library — this file has zero dependencies and
+   works the same on a phone as it does on a desktop. Respects
+   prefers-reduced-motion throughout (see the sitewide override at the
+   bottom of renaissance.css).
+   One deliberate exception: the homepage Journal's page-turn (see
+   initJournalPageTurn) uses position:sticky to pin a frame in place while
+   its entries turn like real book pages — desktop widths and motion
+   allowed only (see the mode switch in renderJournal; mobile and Reduce
+   Motion both get a plain, unpinned list instead). That's still not
+   scroll-jacking in the sense this file otherwise avoids: it's native CSS
+   sticky, not a JS wheel/scrollTo hijack, and native scroll physics are
+   never touched — main.js only ever reads scroll position and writes
+   transform/opacity/currentTime off it, same as every other scroll effect
+   on this page. */
 
 (function(){
   const isTouch = matchMedia('(hover:none), (pointer:coarse)').matches;
@@ -482,23 +492,46 @@
     return firstParagraph(t.explanation || t.excerpt || t.subtitle || '');
   }
 
-  /* ---------------- THE JOURNAL — bold, colourful editorial cards ----------------
+  /* ---------------- THE JOURNAL — a real page-turn, or a plain list ----------------
      Homepage only. Renders straight from thoughts.json — a new /admin
-     entry just becomes the next card. Each one carries its own palette
-     (see PALETTE above), a number, the image, the subtitle preview and a
-     clear Open action; the reveal-on-scroll fade/rise below is a one-shot
-     IntersectionObserver trigger, and initJournalTilt adds a continuous,
-     reversible, scroll-tied depth tilt on top of it — nothing here pins
-     the section or hijacks scroll physics. */
+     entry just becomes the next card. Two modes, decided once per render:
+
+     PIN MODE (desktop widths, motion allowed) — #journalStack becomes a
+     tall scroll spacer and #journalList (inside it) pins to the viewport;
+     every entry stacks in that exact same rectangle and initJournalPageTurn
+     drives which one is showing and how far through its turn it is, purely
+     off scroll position. This is what actually delivers "pages turn as you
+     scroll" — see the long comment on initJournalPageTurn for the mechanics
+     and why an earlier version of this (each card tilting away as it
+     scrolled past in normal document flow) read as a flip-card gimmick
+     instead: there was no fixed "book" for pages to turn against, and
+     barely any time to read a card before it started moving.
+
+     FLOW MODE (mobile, or prefers-reduced-motion: reduce) — nothing pins.
+     Entries render in plain, full-height document flow with a one-shot
+     fade-in (.reveal/.in-view, IntersectionObserver-driven) and the
+     existing image parallax + sun-video scrub as each one scrolls through
+     — no turn, since a phone doesn't have the vertical room to safely pin
+     a whole card, and Reduce Motion should never scroll-jack. */
   window.renderJournal = function(thoughts){
     const host = document.getElementById('journalList');
-    if (!host || !thoughts || !thoughts.length) return;
+    const stackEl = document.getElementById('journalStack');
+    if (!host || !stackEl || !thoughts || !thoughts.length) return;
     host.innerHTML = '';
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // Matches the 700px breakpoint the two-column card layout already
+    // uses (see renaissance.css). Decided once, here, same as
+    // reduceMotion above — not re-checked on resize, same trade-off the
+    // rest of this file already makes.
+    const usePin = !reduceMotion && window.innerWidth >= 700;
+    stackEl.classList.toggle('journal-stack--pin', usePin);
+    stackEl.classList.toggle('journal-stack--flow', !usePin);
 
     thoughts.forEach((t, i) => {
       const p = paletteAt(i);
       const entry = document.createElement('article');
-      entry.className = 'journal-entry reveal';
+      entry.className = usePin ? 'journal-entry' : 'journal-entry reveal';
       applyPalette(entry, p);
       const hasExpl = !!(t.explanation && t.explanation.trim());
       entry.innerHTML = `
@@ -524,25 +557,32 @@
       host.appendChild(entry);
     });
 
-    // reveal-on-scroll only wires up elements present at page load (see the
-    // first IIFE above) — these are injected after that runs, so give them
-    // their own observer here.
-    const revealEls = host.querySelectorAll('.reveal');
-    if ('IntersectionObserver' in window && revealEls.length) {
-      const io = new IntersectionObserver((entries)=>{
-        entries.forEach(entry=>{
-          if (entry.isIntersecting) { entry.target.classList.add('in-view'); io.unobserve(entry.target); }
-        });
-      }, { threshold: 0.12, rootMargin: '0px 0px -6% 0px' });
-      revealEls.forEach(el=> io.observe(el));
-    } else {
-      revealEls.forEach(el=> el.classList.add('in-view'));
+    if (!usePin) {
+      // reveal-on-scroll only wires up elements present at page load (see
+      // the first IIFE above) — these are injected after that runs, so
+      // give them their own observer here. Pin mode skips this entirely:
+      // initJournalPageTurn owns each entry's visibility/opacity outright.
+      const revealEls = host.querySelectorAll('.reveal');
+      if ('IntersectionObserver' in window && revealEls.length) {
+        const io = new IntersectionObserver((entries)=>{
+          entries.forEach(entry=>{
+            if (entry.isIntersecting) { entry.target.classList.add('in-view'); io.unobserve(entry.target); }
+          });
+        }, { threshold: 0.12, rootMargin: '0px 0px -6% 0px' });
+        revealEls.forEach(el=> io.observe(el));
+      } else {
+        revealEls.forEach(el=> el.classList.add('in-view'));
+      }
     }
 
-    initJournalParallax(host);
-    initJournalTilt(host);
     initJournalMotion();
-    initSunVideoScrub(host, '.journal-media');
+
+    if (usePin) {
+      initJournalPageTurn(stackEl, [...host.querySelectorAll('.journal-entry')]);
+    } else {
+      initJournalParallax(host);
+      initSunVideoScrub(host, '.journal-media');
+    }
   };
 
   /* ---------------- Sun-video scroll scrub ----------------
@@ -551,8 +591,11 @@
      instead of just playing it — "the image is sketch, but slowly turning
      coloured as you scroll to it" is a position, not a timer, so the
      video has to be driven the same way the Journal's other scroll
-     effects are (see initJournalTilt/initJournalParallax): read scroll,
-     write a value, rAF-throttled, never hijacking scroll itself. The
+     effects are (see initJournalParallax, and initJournalPageTurn's own
+     separate video-scrub for pin mode): read scroll, write a value,
+     rAF-throttled, never hijacking scroll itself. Flow mode only — pin
+     mode drives its own videos directly off each entry's HOLD phase
+     instead (see initJournalPageTurn), not this function. The
      reveal window starts as the card's top crosses the bottom of the
      viewport and finishes once the card is roughly centred — i.e. exactly
      the span of scrolling TO this entry — then holds on the last frame
@@ -629,72 +672,107 @@
     update();
   }
 
-  /* ---------------- Journal page-turn — right to left, like a real book ----------------
-     Each entry is its own page, hinged on its own LEFT edge
-     (transform-origin) the way a page bound on the left actually turns:
-     a gentle rotateY wobble around that same hinge while it's the one
-     being read, ramping into a full turn only once the entry's top edge
-     rises close to the very top of the viewport — i.e. once it's actually
-     on its way out, not while it's still the page in front of the reader
-     — the right edge sweeping back and to the left as it rotates past
-     90°, fading as it goes edge-on, exactly like turning a physical page
-     over and past. Nothing
-     here touches document flow or scroll position — it's a pure transform/
-     opacity overlay on top of ordinary scrolling (see the long comment on
-     .journal-motion above for why that matters: a sticky/layout-affecting
-     version of this is what caused the reading-dialog feedback-loop bug
-     this site already had to fix once). .journal-grid has
-     backface-visibility:hidden (renaissance.css) so past 90° it simply
-     disappears rather than showing a mirrored back face. Reduce Motion
-     drops it back to the plain, still cards — same policy as the rest of
-     this section. */
-  function initJournalTilt(host){
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduceMotion) return;
-    const grids = [...host.querySelectorAll('.journal-grid')];
-    if (!grids.length) return;
+  /* ---------------- Journal page-turn — pinned book stack, right to left ----------------
+     Pin mode only (see the mode switch in renderJournal). Every entry sits
+     absolutely stacked in the exact same rectangle inside the sticky
+     #journalList frame, z-index highest-to-lowest by index (set below), so
+     entry 0 starts on top and turning it away reveals entry 1 already
+     sitting flat underneath — a real stack, not a card sliding past.
+
+     main.js sizes #journalStack (the spacer that makes the pin possible —
+     see .journal-stack in renaissance.css for why it has to be
+     position:relative, not the sticky element itself) to
+     entries.length × `segment` px of scroll, and splits every entry's own
+     segment into two phases:
+       HOLD  (the first `HOLD` share of the segment) — the entry sits
+             perfectly flat and fully readable. If it has a sunVideo, this
+             is also the window its currentTime scrubs across, start to
+             end, so the sketch visibly colours in as the reader arrives —
+             "user sees first topic and color coming" was the brief this
+             replaced the old crossfade-on-scroll version to match.
+       TURN  (the remaining share) — the entry rotates away around its own
+             left/spine edge (transform-origin), sliding and fading as it
+             passes 90°, exactly like a real page turning over. The very
+             last entry never turns (nothing needs revealing behind it) —
+             it just stays flat until the spacer runs out and .journal-list
+             releases from position:sticky like any other sticky element,
+             letting the Shelf scroll up over it normally.
+     Only the current ACTIVE entry (Math.floor of the overall progress,
+     clamped to the last index) is ever visibility:visible — every other
+     entry is visibility:hidden, which both hides it and removes it from
+     the tab order, so a keyboard user can only ever reach the one page
+     actually on screen. Everything here is read-scroll-position/
+     write-transform, rAF-throttled, same pattern as every other scroll
+     effect on this page — see the file-header comment for why the
+     position:sticky this depends on isn't the "scroll-jacking" that
+     comment otherwise rules out. .journal-grid has
+     backface-visibility:hidden (renaissance.css) so a fully-turned page
+     vanishes cleanly rather than showing a mirrored back face. */
+  function initJournalPageTurn(stackEl, entries){
+    const n = entries.length;
+    if (!n) return;
+
+    const HOLD = 0.6; // share of each entry's segment spent flat & readable
+    let segment = window.innerHeight * 1.8;
+
+    function sizeStack(){
+      segment = window.innerHeight * 1.8;
+      stackEl.style.height = (segment * n) + 'px';
+      update();
+    }
+
+    entries.forEach((entry, i) => {
+      entry.style.zIndex = String(n - i);
+      const video = entry.querySelector('video.jvid-sun');
+      if (video) video.addEventListener('loadedmetadata', update, { once:true });
+    });
+
     let ticking = false;
     function update(){
-      const vh = window.innerHeight;
-      grids.forEach(grid => {
-        const rect = grid.getBoundingClientRect();
-        if (rect.bottom < -200 || rect.top > vh + 200) return;
-        const center = rect.top + rect.height / 2;
-        const centered = (vh / 2 - center) / (vh / 2 + rect.height / 2);
-        const clamped = Math.max(-1, Math.min(1, centered));
-        const gentleScale = 1 - Math.abs(clamped) * 0.035;
-        const gentleTilt = clamped * -1.6;
+      const rect = stackEl.getBoundingClientRect();
+      const scrolledIn = -rect.top;
+      const globalProgress = clamp01(scrolledIn / segment, 0, n);
+      const activeIndex = Math.min(n - 1, Math.max(0, Math.floor(globalProgress)));
 
-        // Turn phase: 0 while the entry is still comfortably on screen,
-        // ramping to 1 as its top edge climbs from mid-viewport up past
-        // the top — i.e. exactly the window where a reader's eye is
-        // leaving this entry for the next one below it. Deliberately close
-        // to the top edge (not mid-viewport) so a card sits flat and fully
-        // readable for as long as it's genuinely the one in front of the
-        // reader, and only starts turning once it's actually on its way
-        // out — verified against a real scroll trace: at vh*0.56 the turn
-        // was already ~25% done the moment a card first scrolled into
-        // view, which read as premature.
-        const turnStart = vh * 0.2;
-        const turnEnd = -rect.height * 0.12;
-        const turnRaw = clamp01((turnStart - rect.top) / (turnStart - turnEnd), 0, 1);
-        const turn = turnRaw * turnRaw * (3 - 2 * turnRaw); // smoothstep
+      entries.forEach((entry, i) => {
+        entry.style.visibility = (i === activeIndex) ? 'visible' : 'hidden';
+        if (i !== activeIndex) return;
 
-        const tilt = gentleTilt + turn * 96; // past 90deg — backface-hidden lets it vanish cleanly
-        const scale = gentleScale - turn * 0.05;
-        const shiftX = turn * -32; // the turning edge sweeps left as it goes, matching the hinge side
-        const fade = 1 - turn * 0.94;
+        const local = clamp01(globalProgress - i, 0, 1);
+        const isLast = i === n - 1;
+        let turnT = 0, readT = 1;
+        if (local <= HOLD) {
+          readT = local / HOLD;
+        } else if (!isLast) {
+          const raw = clamp01((local - HOLD) / (1 - HOLD), 0, 1);
+          turnT = raw * raw * (3 - 2 * raw); // smoothstep
+        }
 
-        grid.style.transformOrigin = 'left center';
-        grid.style.transform = `perspective(1500px) rotateY(${tilt.toFixed(2)}deg) translateX(${shiftX.toFixed(1)}px) scale(${scale.toFixed(3)})`;
-        grid.style.opacity = fade.toFixed(3);
+        const grid = entry.querySelector('.journal-grid');
+        if (grid) {
+          const tilt = turnT * 118; // past 90deg — backface-hidden lets it vanish cleanly
+          const shiftX = turnT * -46; // the spine-opposite edge sweeps left as it turns
+          const scale = 1 - turnT * 0.06;
+          const fade = 1 - turnT * 0.98;
+          grid.style.transformOrigin = 'left center';
+          grid.style.transform = `perspective(1500px) rotateY(${tilt.toFixed(2)}deg) translateX(${shiftX.toFixed(1)}px) scale(${scale.toFixed(3)})`;
+          grid.style.opacity = fade.toFixed(3);
+        }
+
+        const video = entry.querySelector('video.jvid-sun');
+        if (video && video.duration && !isNaN(video.duration)) {
+          const target = readT * video.duration;
+          if (Math.abs(video.currentTime - target) > 0.03) video.currentTime = target;
+        }
       });
       ticking = false;
     }
+
+    sizeStack();
+    window.addEventListener('resize', sizeStack);
     window.addEventListener('scroll', () => {
       if (!ticking) { requestAnimationFrame(update); ticking = true; }
     }, { passive: true });
-    update();
   }
 
   /* ---------------- Journal ambient motion — floating shapes behind the cards ----------------
@@ -713,7 +791,14 @@
   let journalMotionBuilt = false;
   function initJournalMotion(){
     if (journalMotionBuilt) return;
-    const sec = document.querySelector('.journal-sec');
+    // Anchored to .journal-intro (the short, normal-flow head block), not
+    // the section as a whole — .journal-sec now also contains #journalStack,
+    // a scroll spacer many screens tall in pin mode (see initJournalPageTurn),
+    // and this decorative layer is sized to its own offsetParent via
+    // inset:0. Anchoring it there instead of the whole section keeps every
+    // ring/prism/numeral positioned exactly where it always was, around the
+    // headline, rather than smeared thin across a ten-screen span.
+    const sec = document.querySelector('.journal-intro') || document.querySelector('.journal-sec');
     if (!sec) return;
     journalMotionBuilt = true;
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;

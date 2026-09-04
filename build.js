@@ -334,6 +334,13 @@ function buildThoughts() {
     // approximated look on `image` itself when this is empty, so nothing
     // breaks for entries that don't have one yet.
     sketch: t.sketch || '',
+    // Optional: a short looping video that scrubs the same sketch from
+    // plain pencil into the single sun-orange accent colour, driven by
+    // scroll position while the entry is the active pinned page. Blank
+    // until a video is generated (see the sketch-to-sun-video prompt) and
+    // uploaded through /admin; the frontend shows the static sketch when
+    // this is empty, so nothing breaks for entries that don't have one yet.
+    sunVideo: t.sunVideo || '',
     createdAt: t.createdAt, updatedAt: t.updatedAt,
   }));
   fs.writeFileSync(path.join(GEN, 'thoughts.json'), JSON.stringify(index, null, 2), 'utf8');
