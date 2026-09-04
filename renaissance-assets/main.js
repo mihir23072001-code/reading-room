@@ -214,6 +214,29 @@
   } else {
     ornEls.forEach(el=> el.classList.add('in-view'));
   }
+
+  /* ---------- Desk seal video — ambient ink-bleed loop, plays only while
+     on screen. Treated as exempt-from-reduce-motion territory the OTHER
+     way round from the auto-spinning ornaments elsewhere on the site: a
+     vivid colour-morphing bloom read as more disruptive than a slow
+     rotation, so reduced-motion users never get autoplay at all and just
+     see the static poster frame (already a considered mid-bloom still). */
+  const deskSealVideo = document.querySelector('.desk-seal-video');
+  if (deskSealVideo) {
+    const deskReduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!deskReduceMotion && 'IntersectionObserver' in window) {
+      const ioDesk = new IntersectionObserver((entries)=>{
+        entries.forEach(entry=>{
+          if (entry.isIntersecting) {
+            deskSealVideo.play().catch(()=>{});
+          } else {
+            deskSealVideo.pause();
+          }
+        });
+      }, { threshold: 0.25 });
+      ioDesk.observe(deskSealVideo);
+    }
+  }
 })();
 
 /* ============================================================

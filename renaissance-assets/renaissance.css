@@ -294,6 +294,55 @@ body.touch .cursor-dot{ display:none; }
   clip:rect(0,0,0,0); white-space:nowrap; border:0;
 }
 
+/* ============ THE DESK — a quiet, light bridge between the dark hero and
+   the dark Journal ============
+   Deliberately paper-toned (not dark) so the page reads dark → light →
+   dark going into the Journal, the same alternating rhythm the site
+   already uses elsewhere (About is paper-deep against a dark Shelf on
+   either side). "01" — the number the hero itself never wears, so this
+   slots into the existing 02 Journal / 03 Shelf / 04 About sequence with
+   nothing else renumbered. The seal video is a small, separate circular
+   companion to the copy — not composited onto the desk sketch itself,
+   since the two were generated independently and don't share a subject;
+   keeping them as two distinct beats (a small moving detail beside the
+   words, a large still sketch beneath) reads more intentional than trying
+   to force them into one image. */
+.desk-sec{
+  position:relative; overflow:hidden;
+  background-color:var(--paper);
+  background-image:url("img/desk/paper-texture.jpg");
+  background-size:700px 467px; background-repeat:repeat;
+}
+.desk-grid{
+  display:grid; grid-template-columns:1fr; gap:32px; align-items:center;
+  padding:clamp(70px,10vw,120px) 0 0;
+}
+.desk-copy{ max-width:620px; }
+.desk-sub{
+  font-family:var(--serif); font-style:italic; font-size:17px; line-height:1.6;
+  color:var(--ink-soft); margin-top:14px; max-width:520px;
+}
+.desk-seal{
+  justify-self:start;
+  width:clamp(120px,16vw,180px); aspect-ratio:1/1; border-radius:50%; overflow:hidden;
+  box-shadow:0 18px 40px rgba(23,21,16,0.22), 0 0 0 1px var(--paper-line);
+  background:var(--paper-deep);
+}
+.desk-seal-video{ width:100%; height:100%; object-fit:cover; display:block; }
+.desk-figure{
+  margin-top:clamp(36px,6vw,64px); padding-bottom:clamp(50px,7vw,90px);
+}
+.desk-figure img{
+  width:100%; height:auto; display:block; border-radius:6px;
+  box-shadow:0 30px 60px -20px rgba(23,21,16,0.35);
+}
+@media (min-width:700px){
+  .desk-grid{ grid-template-columns:1fr auto; gap:clamp(30px,5vw,64px); }
+}
+@media (max-width:480px){
+  .desk-seal{ width:110px; }
+}
+
 /* ============ THE JOURNAL — colourful editorial cards, each with its own
    intentional palette ============
    Mobile-first: one column always, image above text. Every entry now
