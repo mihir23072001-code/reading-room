@@ -27,6 +27,7 @@
 </head>
 <body>
 <div class="grain"></div>
+<svg class="orn-fly" viewBox="0 0 200 200" aria-hidden="true" focusable="false" data-orn></svg>
 
 <nav class="nav">
   <a href="/index.html" class="nav-name">The Reading Room</a>
@@ -56,6 +57,7 @@
       <img src="/renaissance-assets/img/desk/desk-scene.jpg" alt="" loading="eager" decoding="async" />
     </div>
     <div class="hero-scrim"></div>
+    <svg class="orn-float orn-reveal orn-hero orn-a" viewBox="0 0 200 200" aria-hidden="true" focusable="false" data-orn></svg>
     <div class="hero-inner">
       <p class="hero-kicker">A reading room, kept in public</p>
       <h1 class="hero-statement">
@@ -70,17 +72,13 @@
   </section>
 
   <section class="journal-sec" id="thoughts">
-    <div class="journal-intro">
-      <svg class="orn-float orn-reveal orn-journal orn-b" viewBox="0 0 200 200" aria-hidden="true" focusable="false" data-orn></svg>
-      <div class="wrap journal-head reveal">
-        <p class="eyebrow"><span class="num">01</span>THE JOURNAL</p>
-        <h2 class="journal-title">Journal.</h2>
-        <p class="journal-sub">Entries, kept roughly in the order I had them — fragments, questions and half-formed ideas, not yet arguments. Scroll to turn the page — each one opens to the fuller note.</p>
-      </div>
+    <svg class="orn-float orn-reveal orn-journal orn-b" viewBox="0 0 200 200" aria-hidden="true" focusable="false" data-orn></svg>
+    <div class="wrap journal-head reveal">
+      <p class="eyebrow"><span class="num">01</span>THE JOURNAL</p>
+      <h2 class="journal-title">Journal.</h2>
+      <p class="journal-sub">Entries, kept roughly in the order I had them — fragments, questions and half-formed ideas, not yet arguments. Each one opens to the fuller note.</p>
     </div>
-    <div class="journal-stack" id="journalStack">
-      <div class="journal-stack-frame" id="journalList"></div>
-    </div>
+    <div id="journalList"></div>
   </section>
 
   <section class="marquee-sec" id="books">
@@ -142,12 +140,5 @@
   });
 })();
 </script>
-<!-- Homepage-only: powers the ambient particle layer in the hero
-     (renaissance-assets/hero-scene.js). No other page on the site loads
-     this — everything else stays dependency-free. If this fails to load
-     (offline, CDN hiccup, ad blocker) the hero just renders without the
-     particle layer; nothing else on the page is affected. -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
-<script src="/renaissance-assets/hero-scene.js"></script>
 </body>
 </html>

@@ -1,20 +1,16 @@
 /* THE READING ROOM — shared front-end behaviour.
-   Mobile-first, no scroll-jacking: almost every animation here is either a
-   plain CSS transition/keyframe, or a one-shot IntersectionObserver reveal.
+   Mobile-first, no scroll-jacking, no pinned/sticky sections, no
+   scroll-scrubbed video: almost every animation here is either a plain CSS
+   transition/keyframe, or a one-shot IntersectionObserver reveal.
    No external animation library — this file has zero dependencies and
-   works the same on a phone as it does on a desktop. Respects
-   prefers-reduced-motion throughout (see the sitewide override at the
-   bottom of renaissance.css).
-   One deliberate exception: the homepage Journal's page-turn (see
-   initJournalPageTurn) uses position:sticky to pin a frame in place while
-   its entries turn like real book pages — desktop widths and motion
-   allowed only (see the mode switch in renderJournal; mobile and Reduce
-   Motion both get a plain, unpinned list instead). That's still not
-   scroll-jacking in the sense this file otherwise avoids: it's native CSS
-   sticky, not a JS wheel/scrollTo hijack, and native scroll physics are
-   never touched — main.js only ever reads scroll position and writes
-   transform/opacity/currentTime off it, same as every other scroll effect
-   on this page. */
+   works the same on a phone as it does on a desktop. Interactive/scroll-tied
+   motion respects prefers-reduced-motion throughout (see the sitewide
+   override at the bottom of renaissance.css). The ambient ornaments (the
+   astrolabe shapes built by buildAstrolabe, and the Journal's background
+   rings/prisms/particles from initJournalMotion) are the deliberate
+   exception: they're purely autonomous CSS-keyframe motion, not reactive to
+   scroll or pointer input, so they keep animating even under Reduce
+   Motion — same treatment as the Shelf marquee elsewhere on the site. */
 
 (function(){
   const isTouch = matchMedia('(hover:none), (pointer:coarse)').matches;
@@ -148,38 +144,12 @@
   }
   document.querySelectorAll('svg[data-orn]').forEach(buildAstrolabe);
 
-  /* ---------- hero: layered parallax ----------
-     The hero background is now the desk sketch itself (the astrolabe
-     mandala that used to live here is gone). Three layers still move at
-     different scroll-tied speeds as the reader scrolls through the hero:
-     the drawing itself (slowest, with a faint zoom so it never shows a
-     hard edge), the ambient particle field on top of it, and the title,
-     which moves least since it's the thing meant to stay put and be read.
-     Scroll-tied motion, so — like the Journal's image parallax below —
-     it's skipped entirely under Reduce Motion rather than forced. */
-  const heroBgImg = document.querySelector('.hero-bg img');
-  const heroInnerLayer = document.querySelector('.hero-inner');
-  // hero-scene.js (the particle canvas) loads via its own <script> tag after
-  // this one, so the canvas doesn't exist yet at this point — re-queried
-  // lazily inside the scroll handler below until it shows up, rather than
-  // captured once here and silently staying null forever.
-  let heroParticleLayer = document.querySelector('.hero-scene');
-  if (heroBgImg) {
-    const heroReduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (!heroReduceMotion) {
-      const heroSection = document.querySelector('.hero');
-      function onScrollHeroBg(){
-        if (!heroParticleLayer) heroParticleLayer = document.querySelector('.hero-scene');
-        const h = heroSection.offsetHeight || 1;
-        const progress = Math.max(0, Math.min(1, window.scrollY / h));
-        heroBgImg.style.transform = `scale(1.08) translateY(${(progress * 40).toFixed(1)}px)`;
-        if (heroParticleLayer) heroParticleLayer.style.transform = `translateY(${progress * 75}px)`;
-        if (heroInnerLayer) heroInnerLayer.style.transform = `translateY(${progress * 20}px)`;
-      }
-      window.addEventListener('scroll', onScrollHeroBg, { passive:true });
-      onScrollHeroBg();
-    }
-  }
+  /* ---------- hero ----------
+     Static: the desk sketch as background, the astrolabe ornament
+     (.orn-hero, see the ornament system below) floating over it, the
+     title sitting still on top. No scroll-tied movement here any more —
+     simple was the explicit brief this replaced a layered parallax
+     version with. */
 
   /* ---------- reveal on scroll — one-shot fade/rise, IntersectionObserver only ---------- */
   const revealEls = document.querySelectorAll('.reveal');
@@ -254,23 +224,17 @@
      Shared by every place a Journal cover shows up (homepage card,
      /thoughts.html archive tile, and — through t.sketch alone — nowhere
      else, since the reading dialog carries no image at all). The sketch
-     (`t.sketch`) is the permanent image now; there is no full-colour
-     photo anywhere on the site any more, and no crossfade between two
-     different pictures. The only "colour" is `t.sunVideo` — an optional
-     field, empty until the sketch-to-sun-video pass is uploaded — which,
-     when present, swaps the plain <img> for a <video> using that same
-     sketch as its poster (so it's pixel-identical to the sketch until it
-     plays) and scrubbed by scroll position via initSunVideoScrub below.
-     An entry with no sunVideo yet just shows its plain sketch, forever —
-     an honest, correct state to sit in while the videos are on their way,
-     never a broken image or a dead-end placeholder. */
+     (`t.sketch`) is the only image, always, everywhere — one plain <img>,
+     no video, no crossfade, no scroll-scrubbing. Simple and static was the
+     explicit brief. */
   function sketchMedia(t, altText){
+    // Plain, static sketch image — no motion of any kind. A sunVideo may
+    // still be attached to an entry's data (from an earlier version of
+    // this feature), but it's never rendered here any more: simple and
+    // still was the explicit brief this replaced a scroll-scrubbed
+    // sketch-to-colour video with.
     const src = t.sketch || t.image; // t.image only as a last-resort fallback for any entry with neither
     if (!src) return '';
-    if (t.sunVideo) {
-      return `<video class="jimg jvid-sun" muted playsinline preload="auto" poster="${esc(src)}" aria-label="${esc(altText)}">`
-        + `<source src="${esc(t.sunVideo)}" type="video/mp4" /></video>`;
-    }
     return `<img class="jimg" src="${esc(src)}" alt="${esc(altText)}" loading="lazy" decoding="async"/>`;
   }
 
@@ -492,46 +456,27 @@
     return firstParagraph(t.explanation || t.excerpt || t.subtitle || '');
   }
 
-  /* ---------------- THE JOURNAL — a real page-turn, or a plain list ----------------
+  /* ---------------- THE JOURNAL — a plain, static list ----------------
      Homepage only. Renders straight from thoughts.json — a new /admin
-     entry just becomes the next card. Two modes, decided once per render:
-
-     PIN MODE (desktop widths, motion allowed) — #journalStack becomes a
-     tall scroll spacer and #journalList (inside it) pins to the viewport;
-     every entry stacks in that exact same rectangle and initJournalPageTurn
-     drives which one is showing and how far through its turn it is, purely
-     off scroll position. This is what actually delivers "pages turn as you
-     scroll" — see the long comment on initJournalPageTurn for the mechanics
-     and why an earlier version of this (each card tilting away as it
-     scrolled past in normal document flow) read as a flip-card gimmick
-     instead: there was no fixed "book" for pages to turn against, and
-     barely any time to read a card before it started moving.
-
-     FLOW MODE (mobile, or prefers-reduced-motion: reduce) — nothing pins.
-     Entries render in plain, full-height document flow with a one-shot
-     fade-in (.reveal/.in-view, IntersectionObserver-driven) and the
-     existing image parallax + sun-video scrub as each one scrolls through
-     — no turn, since a phone doesn't have the vertical room to safely pin
-     a whole card, and Reduce Motion should never scroll-jack. */
+     entry just becomes the next card. Deliberately simple: a sketch
+     image, a title, a date, a preview and an Open action, laid out in
+     the same alternating image/text rows as before — but no scroll-tied
+     motion of any kind (an earlier version pinned the section and turned
+     each entry like a book page; that's gone, replaced by this plain
+     list on the explicit brief "remove all the animation... just build
+     a simple minimalistic... website"). The only movement left on this
+     card is the one-shot fade-in every .reveal element on the site
+     already gets as it scrolls into view — see the reveal-on-scroll
+     IntersectionObserver near the top of this file. */
   window.renderJournal = function(thoughts){
     const host = document.getElementById('journalList');
-    const stackEl = document.getElementById('journalStack');
-    if (!host || !stackEl || !thoughts || !thoughts.length) return;
+    if (!host || !thoughts || !thoughts.length) return;
     host.innerHTML = '';
-
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    // Matches the 700px breakpoint the two-column card layout already
-    // uses (see renaissance.css). Decided once, here, same as
-    // reduceMotion above — not re-checked on resize, same trade-off the
-    // rest of this file already makes.
-    const usePin = !reduceMotion && window.innerWidth >= 700;
-    stackEl.classList.toggle('journal-stack--pin', usePin);
-    stackEl.classList.toggle('journal-stack--flow', !usePin);
 
     thoughts.forEach((t, i) => {
       const p = paletteAt(i);
       const entry = document.createElement('article');
-      entry.className = usePin ? 'journal-entry' : 'journal-entry reveal';
+      entry.className = 'journal-entry reveal';
       applyPalette(entry, p);
       const hasExpl = !!(t.explanation && t.explanation.trim());
       entry.innerHTML = `
@@ -557,255 +502,47 @@
       host.appendChild(entry);
     });
 
-    if (!usePin) {
-      // reveal-on-scroll only wires up elements present at page load (see
-      // the first IIFE above) — these are injected after that runs, so
-      // give them their own observer here. Pin mode skips this entirely:
-      // initJournalPageTurn owns each entry's visibility/opacity outright.
-      const revealEls = host.querySelectorAll('.reveal');
-      if ('IntersectionObserver' in window && revealEls.length) {
-        const io = new IntersectionObserver((entries)=>{
-          entries.forEach(entry=>{
-            if (entry.isIntersecting) { entry.target.classList.add('in-view'); io.unobserve(entry.target); }
-          });
-        }, { threshold: 0.12, rootMargin: '0px 0px -6% 0px' });
-        revealEls.forEach(el=> io.observe(el));
-      } else {
-        revealEls.forEach(el=> el.classList.add('in-view'));
-      }
+    // reveal-on-scroll only wires up elements present at page load (see
+    // the first IIFE above) — these are injected after that runs, so
+    // give them their own observer here.
+    const revealEls = host.querySelectorAll('.reveal');
+    if ('IntersectionObserver' in window && revealEls.length) {
+      const io = new IntersectionObserver((entries)=>{
+        entries.forEach(entry=>{
+          if (entry.isIntersecting) { entry.target.classList.add('in-view'); io.unobserve(entry.target); }
+        });
+      }, { threshold: 0.12, rootMargin: '0px 0px -6% 0px' });
+      revealEls.forEach(el=> io.observe(el));
+    } else {
+      revealEls.forEach(el=> el.classList.add('in-view'));
     }
 
     initJournalMotion();
-
-    if (usePin) {
-      initJournalPageTurn(stackEl, [...host.querySelectorAll('.journal-entry')]);
-    } else {
-      initJournalParallax(host);
-      initSunVideoScrub(host, '.journal-media');
-    }
   };
 
-  /* ---------------- Sun-video scroll scrub ----------------
-     For any entry that has a t.sunVideo (see sketchMedia above), this
-     scrubs that video's own currentTime directly off scroll position
-     instead of just playing it — "the image is sketch, but slowly turning
-     coloured as you scroll to it" is a position, not a timer, so the
-     video has to be driven the same way the Journal's other scroll
-     effects are (see initJournalParallax, and initJournalPageTurn's own
-     separate video-scrub for pin mode): read scroll, write a value,
-     rAF-throttled, never hijacking scroll itself. Flow mode only — pin
-     mode drives its own videos directly off each entry's HOLD phase
-     instead (see initJournalPageTurn), not this function. The
-     reveal window starts as the card's top crosses the bottom of the
-     viewport and finishes once the card is roughly centred — i.e. exactly
-     the span of scrolling TO this entry — then holds on the last frame
-     once arrived, same one-way "colours in and stays" behaviour as
-     before. Reduced motion jumps straight to the final, fully-bloomed
-     frame — a one-shot content state, not the ambient motion Reduce
-     Motion is meant to suppress. Entries with no sunVideo yet are plain
-     <img> tags, untouched by any of this. */
-  function initSunVideoScrub(host, selector){
-    const videos = [...host.querySelectorAll(`${selector} video.jvid-sun`)];
-    if (!videos.length) return;
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduceMotion) {
-      videos.forEach(v => {
-        const jump = () => { try { v.currentTime = v.duration || 0; } catch(e){} };
-        if (v.readyState >= 1) jump(); else v.addEventListener('loadedmetadata', jump, { once:true });
-      });
-      return;
-    }
-    let ticking = false;
-    function update(){
-      const vh = window.innerHeight;
-      videos.forEach(v => {
-        if (!v.duration || isNaN(v.duration)) return;
-        const rect = v.getBoundingClientRect();
-        if (rect.bottom < -200 || rect.top > vh + 200) return;
-        const start = vh;
-        const end = vh * 0.4;
-        const progress = clamp01((start - rect.top) / (start - end), 0, 1);
-        const target = progress * v.duration;
-        if (Math.abs(v.currentTime - target) > 0.03) v.currentTime = target;
-      });
-      ticking = false;
-    }
-    window.addEventListener('scroll', () => {
-      if (!ticking) { requestAnimationFrame(update); ticking = true; }
-    }, { passive:true });
-    videos.forEach(v => { if (v.readyState >= 1) update(); else v.addEventListener('loadedmetadata', update, { once:true }); });
-  }
 
-  /* ---------------- Journal image parallax on scroll ----------------
-     Adapted from a scroll-driven image-grid technique: rather than pinning
-     the section and scrubbing a whole grid through a GSAP/Lenis timeline,
-     each entry's own photo just drifts a little against the scroll as its
-     band passes through the viewport — a plain scroll listener writing a
-     transform, rAF-throttled, no pinning and no animation library, so
-     normal scroll physics are never touched. Skipped entirely under
-     reduced motion, in which case the image just sits at its normal,
-     unzoomed framing. */
-  function initJournalParallax(host){
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduceMotion) return;
-    const imgs = [...host.querySelectorAll('.journal-media img')];
-    if (!imgs.length) return;
-
-    let ticking = false;
-    function update(){
-      const vh = window.innerHeight;
-      imgs.forEach(img => {
-        const rect = img.parentElement.getBoundingClientRect();
-        if (rect.bottom < -200 || rect.top > vh + 200) return; // well offscreen — skip the write
-        const center = rect.top + rect.height / 2;
-        // -1 (band's centre at the very bottom of the viewport) to
-        // 1 (band's centre at the very top) as it travels through.
-        const progress = (vh / 2 - center) / (vh / 2 + rect.height / 2);
-        const clamped = Math.max(-1, Math.min(1, progress));
-        img.style.transform = `scale(1.16) translateY(${(clamped * 7).toFixed(2)}%)`;
-      });
-      ticking = false;
-    }
-    window.addEventListener('scroll', () => {
-      if (!ticking) { requestAnimationFrame(update); ticking = true; }
-    }, { passive: true });
-    update();
-  }
-
-  /* ---------------- Journal page-turn — pinned book stack, right to left ----------------
-     Pin mode only (see the mode switch in renderJournal). Every entry sits
-     absolutely stacked in the exact same rectangle inside the sticky
-     #journalList frame, z-index highest-to-lowest by index (set below), so
-     entry 0 starts on top and turning it away reveals entry 1 already
-     sitting flat underneath — a real stack, not a card sliding past.
-
-     main.js sizes #journalStack (the spacer that makes the pin possible —
-     see .journal-stack in renaissance.css for why it has to be
-     position:relative, not the sticky element itself) to
-     entries.length × `segment` px of scroll, and splits every entry's own
-     segment into two phases:
-       HOLD  (the first `HOLD` share of the segment) — the entry sits
-             perfectly flat and fully readable. If it has a sunVideo, this
-             is also the window its currentTime scrubs across, start to
-             end, so the sketch visibly colours in as the reader arrives —
-             "user sees first topic and color coming" was the brief this
-             replaced the old crossfade-on-scroll version to match.
-       TURN  (the remaining share) — the entry rotates away around its own
-             left/spine edge (transform-origin), sliding and fading as it
-             passes 90°, exactly like a real page turning over. The very
-             last entry never turns (nothing needs revealing behind it) —
-             it just stays flat until the spacer runs out and .journal-list
-             releases from position:sticky like any other sticky element,
-             letting the Shelf scroll up over it normally.
-     Only the current ACTIVE entry (Math.floor of the overall progress,
-     clamped to the last index) is ever visibility:visible — every other
-     entry is visibility:hidden, which both hides it and removes it from
-     the tab order, so a keyboard user can only ever reach the one page
-     actually on screen. Everything here is read-scroll-position/
-     write-transform, rAF-throttled, same pattern as every other scroll
-     effect on this page — see the file-header comment for why the
-     position:sticky this depends on isn't the "scroll-jacking" that
-     comment otherwise rules out. .journal-grid has
-     backface-visibility:hidden (renaissance.css) so a fully-turned page
-     vanishes cleanly rather than showing a mirrored back face. */
-  function initJournalPageTurn(stackEl, entries){
-    const n = entries.length;
-    if (!n) return;
-
-    const HOLD = 0.6; // share of each entry's segment spent flat & readable
-    let segment = window.innerHeight * 1.8;
-
-    function sizeStack(){
-      segment = window.innerHeight * 1.8;
-      stackEl.style.height = (segment * n) + 'px';
-      update();
-    }
-
-    entries.forEach((entry, i) => {
-      entry.style.zIndex = String(n - i);
-      const video = entry.querySelector('video.jvid-sun');
-      if (video) video.addEventListener('loadedmetadata', update, { once:true });
-    });
-
-    let ticking = false;
-    function update(){
-      const rect = stackEl.getBoundingClientRect();
-      const scrolledIn = -rect.top;
-      const globalProgress = clamp01(scrolledIn / segment, 0, n);
-      const activeIndex = Math.min(n - 1, Math.max(0, Math.floor(globalProgress)));
-
-      entries.forEach((entry, i) => {
-        entry.style.visibility = (i === activeIndex) ? 'visible' : 'hidden';
-        if (i !== activeIndex) return;
-
-        const local = clamp01(globalProgress - i, 0, 1);
-        const isLast = i === n - 1;
-        let turnT = 0, readT = 1;
-        if (local <= HOLD) {
-          readT = local / HOLD;
-        } else if (!isLast) {
-          const raw = clamp01((local - HOLD) / (1 - HOLD), 0, 1);
-          turnT = raw * raw * (3 - 2 * raw); // smoothstep
-        }
-
-        const grid = entry.querySelector('.journal-grid');
-        if (grid) {
-          const tilt = turnT * 118; // past 90deg — backface-hidden lets it vanish cleanly
-          const shiftX = turnT * -46; // the spine-opposite edge sweeps left as it turns
-          const scale = 1 - turnT * 0.06;
-          const fade = 1 - turnT * 0.98;
-          grid.style.transformOrigin = 'left center';
-          grid.style.transform = `perspective(1500px) rotateY(${tilt.toFixed(2)}deg) translateX(${shiftX.toFixed(1)}px) scale(${scale.toFixed(3)})`;
-          grid.style.opacity = fade.toFixed(3);
-        }
-
-        const video = entry.querySelector('video.jvid-sun');
-        if (video && video.duration && !isNaN(video.duration)) {
-          const target = readT * video.duration;
-          if (Math.abs(video.currentTime - target) > 0.03) video.currentTime = target;
-        }
-      });
-      ticking = false;
-    }
-
-    sizeStack();
-    window.addEventListener('resize', sizeStack);
-    window.addEventListener('scroll', () => {
-      if (!ticking) { requestAnimationFrame(update); ticking = true; }
-    }, { passive: true });
-  }
 
   /* ---------------- Journal ambient motion — floating shapes behind the cards ----------------
      Rings, glass prisms, drifting particles and one large rotating
-     numeral, generated once into a layer behind .journal-head and
-     #journalList (z-index puts it beneath both). Ambient drift/spin is
-     autonomous — same exemption as the Shelf marquee and the small
-     floating ornaments elsewhere on the site — but the extra scroll
-     parallax and the desktop pointer-follow are both interactive,
-     scroll/pointer-tied motion, so — unlike those autonomous effects —
-     this respects Reduce Motion directly, per this feature's own spec:
-     shapes stay put and visible, just without any of the three kinds of
-     movement layered on top. Touch devices get fewer shapes and no
-     pointer-follow (there's no hover pointer to follow), keeping the
-     layer light on mid-range Android hardware. */
+     numeral, generated once into a layer behind .journal-head. Purely
+     autonomous — the same exemption as the Shelf marquee and the
+     floating ornaments elsewhere on the site (see .orn-float below):
+     each shape spins/drifts/twinkles on its own fixed CSS keyframe
+     (renaissance.css: jm-spin-a/b, jm-drift-a/b, jm-numeral-sway,
+     jm-twinkle), nothing here reads scroll or pointer position any more,
+     so there's nothing to gate behind prefers-reduced-motion — it's
+     always on, "as before" per the explicit brief. Touch devices get
+     fewer shapes, keeping the layer light on mid-range Android hardware. */
   let journalMotionBuilt = false;
   function initJournalMotion(){
     if (journalMotionBuilt) return;
-    // Anchored to .journal-intro (the short, normal-flow head block), not
-    // the section as a whole — .journal-sec now also contains #journalStack,
-    // a scroll spacer many screens tall in pin mode (see initJournalPageTurn),
-    // and this decorative layer is sized to its own offsetParent via
-    // inset:0. Anchoring it there instead of the whole section keeps every
-    // ring/prism/numeral positioned exactly where it always was, around the
-    // headline, rather than smeared thin across a ten-screen span.
-    const sec = document.querySelector('.journal-intro') || document.querySelector('.journal-sec');
+    const sec = document.querySelector('.journal-sec');
     if (!sec) return;
     journalMotionBuilt = true;
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const isTouch = window.matchMedia('(hover: none), (pointer: coarse)').matches;
 
     const layer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    layer.setAttribute('class', 'journal-motion' + (reduceMotion ? ' is-still' : ''));
+    layer.setAttribute('class', 'journal-motion');
     layer.setAttribute('viewBox', '0 0 100 100');
     layer.setAttribute('preserveAspectRatio', 'none');
     layer.setAttribute('aria-hidden', 'true');
@@ -829,39 +566,37 @@
     layer.appendChild(defs);
 
     const rings = [
-      { cx:14, cy:22, r:9,  i:0, depth:.5, cls:'jm-ring jm-spin-a' },
-      { cx:88, cy:16, r:6,  i:0, depth:.8, cls:'jm-ring jm-spin-b' },
-      { cx:92, cy:70, r:11, i:0, depth:.35, cls:'jm-ring jm-spin-a' },
+      { cx:14, cy:22, r:9,  i:0, cls:'jm-ring jm-spin-a' },
+      { cx:88, cy:16, r:6,  i:0, cls:'jm-ring jm-spin-b' },
+      { cx:92, cy:70, r:11, i:0, cls:'jm-ring jm-spin-a' },
     ];
     rings.forEach(r => {
       layer.appendChild(el('circle', {
         class:r.cls, cx:r.cx, cy:r.cy, r:r.r, fill:'none',
         stroke:`url(#jm-grad-${r.i})`, 'stroke-width':.5,
-        'data-depth':r.depth,
       }));
     });
 
     if (!isTouch) {
-      const extraRing = el('circle', { class:'jm-ring jm-spin-b', cx:6, cy:82, r:5, fill:'none', stroke:`url(#jm-grad-0)`, 'stroke-width':.4, 'data-depth':.9 });
+      const extraRing = el('circle', { class:'jm-ring jm-spin-b', cx:6, cy:82, r:5, fill:'none', stroke:`url(#jm-grad-0)`, 'stroke-width':.4 });
       layer.appendChild(extraRing);
     }
 
     const prisms = [
-      { x:80, y:38, s:7, i:0, depth:.65, cls:'jm-prism jm-drift-a' },
-      { x:20, y:78, s:5, i:0, depth:.45, cls:'jm-prism jm-drift-b' },
+      { x:80, y:38, s:7, i:0, cls:'jm-prism jm-drift-a' },
+      { x:20, y:78, s:5, i:0, cls:'jm-prism jm-drift-b' },
     ];
     prisms.forEach(p => {
       const rect = el('rect', {
         class:p.cls, x:p.x - p.s/2, y:p.y - p.s/2, width:p.s, height:p.s,
         fill:PALETTE[p.i].accent, 'fill-opacity':'0.14', stroke:PALETTE[p.i].accent, 'stroke-width':.3, 'stroke-opacity':.55,
-        transform:`rotate(45 ${p.x} ${p.y})`, 'data-depth':p.depth,
+        transform:`rotate(45 ${p.x} ${p.y})`,
       });
       layer.appendChild(rect);
     });
 
     const numeral = el('text', {
       class:'jm-numeral', x:97, y:96, 'text-anchor':'end',
-      'data-depth':.25,
     });
     numeral.textContent = '06';
     layer.appendChild(numeral);
@@ -874,48 +609,14 @@
         const cy = 8 + ((i * 17.7) % 86);
         layer.appendChild(el('circle', {
           class:'jm-particle', cx, cy, r:.35 + (i % 3) * .12,
-          fill:p.accent, 'data-depth':(.3 + (i % 5) * .12).toFixed(2),
+          fill:p.accent,
         }));
       }
     }
 
     sec.insertBefore(layer, sec.firstChild);
-
-    if (reduceMotion) return; // shapes stay visible and static — no scroll or pointer motion
-
-    const shapes = [...layer.querySelectorAll('[data-depth]')];
-
-    let ticking = false;
-    function onScroll(){
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(() => {
-        const rect = sec.getBoundingClientRect();
-        const vh = window.innerHeight;
-        const progress = Math.max(-1, Math.min(1, (vh / 2 - (rect.top + rect.height / 2)) / (vh / 2 + rect.height / 2)));
-        shapes.forEach(s => {
-          const depth = parseFloat(s.dataset.depth) || .5;
-          const py = parseFloat(s.dataset.px) || 0;
-          s.style.setProperty('--jm-scroll-y', `${(progress * depth * 9).toFixed(2)}px`);
-        });
-        ticking = false;
-      });
-    }
-    window.addEventListener('scroll', onScroll, { passive:true });
-    onScroll();
-
-    if (!isTouch) {
-      window.addEventListener('mousemove', (e) => {
-        const nx = (e.clientX / window.innerWidth - .5) * 2;
-        const ny = (e.clientY / window.innerHeight - .5) * 2;
-        shapes.forEach(s => {
-          const depth = parseFloat(s.dataset.depth) || .5;
-          s.style.setProperty('--jm-pointer-x', `${(nx * depth * 2.2).toFixed(2)}px`);
-          s.style.setProperty('--jm-pointer-y', `${(ny * depth * 2.2).toFixed(2)}px`);
-        });
-      }, { passive:true });
-    }
   }
+
 
   /* ---------------- Thoughts archive — the same set, laid out to browse ----------------
      Used by /thoughts.html: same tile template, same click-to-open dialog,
@@ -925,7 +626,6 @@
     if (!host || !thoughts || !thoughts.length) return;
     host.innerHTML = '';
     thoughts.forEach((t, i) => host.appendChild(buildTile(t, i)));
-    initSunVideoScrub(host, '.ttmedia');
   };
 
   /* ---------------- THE SHELF — simple CSS marquee ----------------
