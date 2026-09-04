@@ -396,6 +396,26 @@ body.touch .cursor-dot{ display:none; }
   .hero-circle{ width:clamp(52px,14vw,82px); height:clamp(52px,14vw,82px); top:clamp(66px,21vw,120px); right:9%; }
   .hero-construct{ width:82vw; top:4%; }
 
+  /* On mobile this line sits over the construction lines and the (now more
+     visible) illustration, so plain ink text gets lost in it. A flat-orange,
+     slightly slanted card behind it lifts it clear of everything behind.
+     The reveal keyframe is overridden (not just the base transform) because
+     the shared .hero-sub entrance animation already drives `transform`
+     (translateY) — a plain `transform:rotate()` on the element would be
+     replaced by that animation's own end-state the moment it finishes,
+     silently losing the tilt. Baking the rotation into every keyframe of
+     this variant keeps it constant through and after the fade-in. */
+  .hero-sub{
+    display:inline-block; background:var(--sun); color:var(--paper);
+    padding:10px 16px; margin-top:clamp(28px,5vw,44px);
+    max-width:88%;
+    animation-name:hero-rise-tilt;
+  }
+  @keyframes hero-rise-tilt{
+    from{ opacity:0; transform:translateY(16px) rotate(-1.6deg); }
+    to{ opacity:1; transform:translateY(0) rotate(-1.6deg); }
+  }
+
   /* the illustration: no longer flow content under the text — a full-bleed
      background for the entire (taller) hero. Cover, never stretched. */
   .hero-right{
