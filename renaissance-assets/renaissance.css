@@ -333,14 +333,21 @@ body.touch .cursor-dot{ display:none; }
   clip-path:polygon(100% 0, 100% 100%, 0 0); pointer-events:none;
 }
 .journal-media{
-  position:relative; width:100%; aspect-ratio:16/9; overflow:hidden; background:var(--paper-deep); border-radius:clamp(10px,1.4vw,16px);
+  position:relative; width:100%; aspect-ratio:16/9;
+  /* No box any more — no fill, no border-radius, no clipping. The sketch
+     is now a transparent PNG (see .jimg below), so it sits straight on
+     the page's own paper texture instead of inside a framed card. This
+     element still reserves the same 16:9 layout footprint, just with
+     nothing painted behind it. */
 }
 /* ============ Journal cover media ============
    A single static pencil sketch, always — no video, no motion of any
-   kind on the image itself. object-fit:contain (not cover) so the whole
-   sketch is always visible, letterboxed into the paper-toned box rather
-   than cropped — matters most on a phone, where cover would otherwise
-   cut off the top/bottom of a tall drawing. */
+   kind on the image itself. A transparent PNG (no background baked in,
+   same as the file the sketch was uploaded as) rather than a JPEG on a
+   paper-coloured card, so the linework reads as drawn directly on the
+   page. object-fit:contain keeps the whole sketch visible rather than
+   cropped — matters most on a phone, where cover would otherwise cut off
+   the top/bottom of a tall drawing. */
 .jimg{ position:absolute; inset:0; width:100%; height:100%; object-fit:contain; display:block; }
 .journal-num{
   position:absolute; left:14px; bottom:14px; z-index:1;
