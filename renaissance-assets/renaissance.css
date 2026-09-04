@@ -251,12 +251,47 @@ body.touch .cursor-dot{ display:none; }
 }
 .hero-construct .hc-dot{ stroke:none; fill:var(--sun); opacity:0.5; }
 
+/* mystical levitation — the construction lines quietly hover: very slow,
+   independent drift/rotation/breathing per shape, never the sharp,
+   mechanical rhythm of a UI animation. The headline and the portal
+   illustration stay completely still; only this thin geometry is alive.
+   Same "ambient motion is exempt from Reduce Motion" policy as every
+   other autonomous ornament on the site (astrolabes, flying compasses,
+   the Shelf marquee) — see the restoration rule in the reduced-motion
+   block near the bottom of this file. */
+.hero-construct :is(circle, line){ transform-box:fill-box; transform-origin:50% 50%; }
+.hc-orbit-a{ animation:hc-float-a 26s ease-in-out infinite; }
+.hc-orbit-b{ animation:hc-float-b 32s ease-in-out infinite; animation-delay:-9s; }
+.hc-drift-v{ animation:hc-drift-v 22s ease-in-out infinite; animation-delay:-4s; }
+.hc-drift-h{ animation:hc-drift-h 29s ease-in-out infinite; animation-delay:-14s; }
+.hc-glim{ animation:hc-glimmer 7s ease-in-out infinite; animation-delay:-2s; }
+@keyframes hc-float-a{
+  0%,100%{ transform:translate(0,0) rotate(0deg); }
+  50%{ transform:translate(9px,-11px) rotate(2.5deg); }
+}
+@keyframes hc-float-b{
+  0%,100%{ transform:translate(0,0) rotate(0deg); }
+  50%{ transform:translate(-10px,8px) rotate(-3deg); }
+}
+@keyframes hc-drift-v{
+  0%,100%{ transform:translate(0,0); }
+  50%{ transform:translate(5px,4px); }
+}
+@keyframes hc-drift-h{
+  0%,100%{ transform:translate(0,0); }
+  50%{ transform:translate(-6px,3px); }
+}
+@keyframes hc-glimmer{
+  0%,100%{ opacity:0.42; transform:scale(1); }
+  50%{ opacity:0.85; transform:scale(1.6); }
+}
+
 .hero-grid{
   position:relative; z-index:3; width:100%;
   display:grid; grid-template-columns:1.05fr 0.85fr; gap:clamp(24px,4.6vw,70px); align-items:center;
   padding:clamp(118px,13vw,168px) 0 clamp(50px,7vw,80px);
 }
-.hero-left{ position:relative; z-index:2; }
+.hero-left{ position:relative; z-index:2; margin-left:clamp(8px,7vw,116px); }
 
 .hero-kicker{
   font-family:var(--serif); font-style:italic; font-weight:500;
@@ -278,17 +313,19 @@ body.touch .cursor-dot{ display:none; }
 
 /* THE one solid colour accent in the hero. Flat fill only — explicitly no
    gradient, texture, glow, shadow or transparency anywhere on this shape.
-   Positioned to sit partially BEHIND the end of the ASSUME/SEARCH lines —
-   the letters (z-index 2) render on top of it (z-index 1). */
+   Sits low, around the tail end of the ASSUME line, partially behind both
+   the letters and the construction-line geometry — the letters (z-index 2)
+   render on top of it (z-index 1), the construct layer (z-index 0) behind. */
 .hero-circle{
   position:absolute; z-index:1; pointer-events:none;
-  top:clamp(10px,3.6vw,34px); right:22%;
+  top:clamp(50px,7vw,112px); right:22%;
   width:clamp(90px,11vw,170px); height:clamp(90px,11vw,170px);
   border-radius:50%;
   background:var(--sun);
   opacity:0; animation:hero-rise .9s var(--ease) .5s forwards;
 }
 .hero-sub{
+  position:relative; z-index:2;
   margin-top:clamp(32px,4.4vw,50px); font-family:var(--sans); font-size:15px; letter-spacing:0.02em; color:var(--ink-soft);
   max-width:420px; line-height:1.6;
   opacity:0; animation:hero-rise .9s var(--ease) .74s forwards;
@@ -296,6 +333,7 @@ body.touch .cursor-dot{ display:none; }
 @keyframes hero-rise{ from{ opacity:0; transform:translateY(16px); } to{ opacity:1; transform:translateY(0); } }
 
 .hero-cue{
+  position:relative; z-index:2;
   margin-top:clamp(38px,5vw,60px); display:inline-flex; align-items:center; gap:11px;
   font-family:var(--sans); font-size:11px; letter-spacing:0.16em; text-transform:uppercase; font-weight:700;
   color:var(--sun); opacity:0.9; transition:opacity .5s var(--ease);
@@ -306,13 +344,14 @@ body.touch .cursor-dot{ display:none; }
 @keyframes hero-cue-bob{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(4px); } }
 
 /* right column — the monochrome portal illustration, integrated directly
-   into the hero (no card, no frame). mix-blend-mode:multiply drops the
-   artwork's white paper out against the page's own parchment tone, so it
-   reads as printed straight onto the same sheet rather than a pasted-in
-   photo. */
+   into the hero with no card, frame, box or background of its own. The
+   source file is a true alpha-transparent PNG (ink-dark pixels opaque,
+   everything else transparent) rather than a photo with a white backing,
+   so the linework sits straight on the parchment with no rectangle ever
+   visible behind it, in any browser. */
 .hero-right{ position:relative; z-index:2; }
-.hero-portal{ width:100%; }
-.hero-portal img{ width:100%; height:auto; display:block; mix-blend-mode:multiply; }
+.hero-portal{ width:100%; background:transparent; }
+.hero-portal img{ width:100%; height:auto; display:block; background:transparent; }
 .hero-quote{
   position:absolute; top:1%; right:2%; z-index:3; max-width:150px; text-align:right;
   font-family:var(--serif); font-style:italic; font-size:clamp(13px,1.3vw,16px); line-height:1.4;
@@ -321,10 +360,11 @@ body.touch .cursor-dot{ display:none; }
 
 @media (max-width:900px){
   .hero-grid{ grid-template-columns:1fr; padding-top:clamp(112px,20vw,150px); gap:8px; }
+  .hero-left{ margin-left:0; }
   .hero-right{ margin-top:18px; max-width:78vw; }
   .hero-quote{ display:none; }
   .hero-statement{ font-size:clamp(44px,13.5vw,72px); line-height:1.03; margin-bottom:8px; }
-  .hero-circle{ width:clamp(74px,21vw,116px); height:clamp(74px,21vw,116px); top:38px; right:9%; }
+  .hero-circle{ width:clamp(74px,21vw,116px); height:clamp(74px,21vw,116px); top:clamp(46px,15vw,90px); right:9%; }
   .hero-construct{ width:82vw; top:4%; }
 }
 
@@ -941,6 +981,13 @@ table.jtable tr:hover td{ background:rgba(110,47,40,0.05); }
   .orn-fly.fly-b{ animation-duration:135s !important; animation-iteration-count:infinite !important; }
   .orn-fly.fly-c{ animation-duration:95s !important; animation-iteration-count:infinite !important; }
   .orn-fly.fly-d{ animation-duration:150s !important; animation-iteration-count:infinite !important; }
+  /* The hero's construction-line geometry — same policy: slow, autonomous
+     levitation, not reactive to input, so it keeps quietly hovering. */
+  .hc-orbit-a{ animation-duration:26s !important; animation-iteration-count:infinite !important; }
+  .hc-orbit-b{ animation-duration:32s !important; animation-iteration-count:infinite !important; }
+  .hc-drift-v{ animation-duration:22s !important; animation-iteration-count:infinite !important; }
+  .hc-drift-h{ animation-duration:29s !important; animation-iteration-count:infinite !important; }
+  .hc-glim{ animation-duration:7s !important; animation-iteration-count:infinite !important; }
   /* The Journal's ambient rings/prisms/numeral/particles — same policy:
      autonomous decoration, not reactive to input, so it keeps moving. */
   .jm-spin-a{ animation-duration:52s !important; animation-iteration-count:infinite !important; }
